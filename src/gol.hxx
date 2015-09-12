@@ -11,7 +11,7 @@ class WorkerCommunicator
 public:
     virtual void beginIteration() = 0;
 
-    virtual void sendBorders(Borders t) = 0;
+    virtual void sendBorders(AbstractTile* t) = 0;
     virtual Borders receiveBorders() = 0;
     virtual void waitForBordersRead() = 0;
 
