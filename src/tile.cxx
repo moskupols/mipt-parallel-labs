@@ -1,0 +1,112 @@
+#include "tile.hxx"
+
+#include <cstring>
+
+namespace game_of_life
+{
+
+CoordRect::CoordRect() {}
+
+CoordRect::CoordRect(coord_t r1, coord_t c1, coord_t r2, coord_t c2):
+    r1(r1), c1(c1), r2(r2), c2(c2)
+{}
+
+size_t CoordRect::getHeight() const { return r2 - r1; }
+size_t CoordRect::getWidth() const { return c2 - c1; }
+
+
+AbstractTile::AbstractTile(size_t height, size_t width):
+    height(height),
+    width(width)
+{
+    coord_t h = height, w = width;
+    borderRects[SIDE_NW] = CoordRect(0,   0,   1, 1);
+    borderRects[SIDE_N ] = CoordRect(0,   0,   1, w);
+    borderRects[SIDE_NE] = CoordRect(0,   w-1, 1, w);
+    borderRects[SIDE_W ] = CoordRect(0,   0,   h, 1);
+    borderRects[SIDE_E ] = CoordRect(0,   w-1, h, w);
+    borderRects[SIDE_SW] = CoordRect(h-1, 0,   h, 1);
+    borderRects[SIDE_S ] = CoordRect(h-1, 0,   h, w);
+    borderRects[SIDE_SE] = CoordRect(h-1, w-1, h, 1);
+}
+
+AbstractTile::~AbstractTile() {}
+
+size_t AbstractTile::getHeight() const { return height; }
+size_t AbstractTile::getWidth() const { return width; }
+
+const CoordRect& AbstractTile::getBorderRect(Side s) const
+{
+    return borderRects[s];
+}
+
+Borders AbstractTile::makeBorders() const
+{
+    Borders ret(SIDE_COUNT);
+    for (size_t s = 0; s < SIDE_COUNT; ++s)
+        ret[s] = makeBorder(static_cast<Side>(s));
+    return ret;
+}
+
+Border* AbstractTile::makeBorder(Side s) const
+{
+    return makeSlice(getBorderRect(s));
+}
+
+
+TileView::TileView(AbstractTile* viewed, CoordRect r):
+    AbstractTile(r.getHeight(), r.getWidth()),
+    viewed(viewed),
+    off_r(r.r1),
+    off_c(r.c1)
+{}
+
+bool TileView::at(coord_t r, coord_t c) const
+{
+    return viewed->at(off_r + r, off_c + c);
+}
+
+void TileView::set(coord_t r, coord_t c, bool v)
+{
+    return viewed->set(off_r + r, off_c + c, v);
+}
+
+TileView* TileView::makeSlice(const CoordRect& reg) const
+{
+    return new TileView(viewed, reg);
+}
+
+
+Matrix::Matrix(size_t height, size_t width):
+    AbstractTile(height, width),
+    data(new bool(height * width))
+{}
+
+Matrix::~Matrix() { delete[] data; }
+
+bool Matrix::at(coord_t r, coord_t c) const { return data[r * getWidth() + c]; }
+
+void Matrix::set(coord_t r, coord_t c, bool v) { data[r * getWidth() + c] = v; }
+
+Matrix* Matrix::makeSlice(const CoordRect& reg) const
+{
+    Matrix* ret = new Matrix(reg.getHeight(), reg.getWidth());
+
+    size_t copyWidth = reg.getWidth();
+    size_t copyStride = getWidth();
+    bool* beginStart = data + getWidth() * reg.r1 + reg.c1;
+    bool* endStart = beginStart + copyStride * reg.getHeight();
+
+    for (bool* p = beginStart, t = ret->data;
+         p != endStart;
+         p += copyStride, t += copyWidth)
+        memcpy((void*)t, (void*)p, copyWidth * sizeof(bool));
+
+    return ret;
+}
+
+Matrix m(2, 2);
+TileView t(&m);
+
+} // namespace game_of_life
+
