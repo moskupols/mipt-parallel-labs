@@ -18,12 +18,12 @@ void Thread::join()
         THROW_C_ERROR();
 }
 
-bool Thread::isRunning()
+bool Thread::isRunning() const
 {
     return running;
 }
 
-bool Thread::isCurrent()
+bool Thread::isCurrent() const
 {
     return pthread_self() == descriptor;
 }

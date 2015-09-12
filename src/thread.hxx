@@ -13,9 +13,9 @@ public:
     void start();
     void join();
 
-    bool isRunning();
+    bool isRunning() const;
 
-    bool isCurrent();
+    bool isCurrent() const;
 
 protected:
     Thread();
