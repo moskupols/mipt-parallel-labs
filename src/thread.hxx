@@ -51,7 +51,7 @@ private:
 class MutexLocker : Noncopyable
 {
 public:
-    MutexLocker(Mutex& m);
+    explicit MutexLocker(Mutex& m);
     ~MutexLocker();
 
 private:
