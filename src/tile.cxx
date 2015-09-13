@@ -40,7 +40,7 @@ const CoordRect& AbstractTile::getBorderRect(Side s) const
     return borderRects[s];
 }
 
-Borders AbstractTile::makeBorders() const
+Borders AbstractTile::makeBorders()
 {
     Borders ret(SIDE_COUNT);
     for (size_t s = 0; s < SIDE_COUNT; ++s)
@@ -48,13 +48,13 @@ Borders AbstractTile::makeBorders() const
     return ret;
 }
 
-Border* AbstractTile::makeBorder(Side s) const
+Border* AbstractTile::makeBorder(Side s)
 {
     return makeSlice(getBorderRect(s));
 }
 
 
-TileView::TileView(AbstractTile* viewed, CoordRect r):
+TileView::TileView(AbstractTile* viewed, const CoordRect& r):
     AbstractTile(r.getHeight(), r.getWidth()),
     viewed(viewed),
     off_r(r.r1),
@@ -71,9 +71,34 @@ void TileView::set(coord_t r, coord_t c, bool v)
     return viewed->set(off_r + r, off_c + c, v);
 }
 
-TileView* TileView::makeSlice(const CoordRect& reg) const
+TileView* TileView::makeSlice(const CoordRect& reg)
 {
-    return new TileView(viewed, reg);
+    return new TileView(this, reg);
+}
+
+
+TorusView::TorusView(AbstractTile* viewed):
+    TileView(viewed)
+{}
+
+bool TorusView::at(coord_t r, coord_t c) const
+{
+    return TileView::at(
+            normalizeCoord(r, getHeight()),
+            normalizeCoord(c, getWidth()));
+}
+
+void TorusView::set(coord_t r, coord_t c, bool v)
+{
+    return TileView::set(
+            normalizeCoord(r, getHeight()),
+            normalizeCoord(c, getWidth()),
+            v);
+}
+
+coord_t TorusView::normalizeCoord(coord_t c, coord_t dimen)
+{
+    return ((c % dimen) + dimen) % dimen;
 }
 
 
@@ -88,7 +113,7 @@ bool Matrix::at(coord_t r, coord_t c) const { return data[r * getWidth() + c]; }
 
 void Matrix::set(coord_t r, coord_t c, bool v) { data[r * getWidth() + c] = v; }
 
-Matrix* Matrix::makeSlice(const CoordRect& reg) const
+Matrix* Matrix::makeSlice(const CoordRect& reg)
 {
     Matrix* ret = new Matrix(reg.getHeight(), reg.getWidth());
 

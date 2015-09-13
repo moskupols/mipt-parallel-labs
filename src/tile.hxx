@@ -32,7 +32,7 @@ typedef AbstractTile Border;
 typedef std::vector<Border*> Borders;
 
 
-static enum Side
+enum Side
 {
     SIDE_NW = 0,
     SIDE_N = 1,
@@ -43,9 +43,9 @@ static enum Side
     SIDE_SW = 6,
     SIDE_W = 7
 };
-static const size_t SIDE_COUNT = SIDE_SE + 1;
+static const size_t SIDE_COUNT = SIDE_W + 1;
 
-static const int SIDE_DELTAS[SIDE_COUNT] =
+static const int SIDE_DELTAS[SIDE_COUNT][2] =
 {
     {-1, -1}, {-1, 0}, {-1, 1},
     {0, -1},           {0, 1},
@@ -69,10 +69,12 @@ public:
 
     const CoordRect& getBorderRect(Side s) const;
 
-    Borders makeBorders() const;
-    Border* makeBorder(Side s) const;
+    // TODO: solve problem with const-ness:
+    // immutable slices or smth
+    Borders makeBorders();
+    Border* makeBorder(Side s);
 
-    virtual AbstractTile* makeSlice(const CoordRect& r) const = 0;
+    virtual AbstractTile* makeSlice(const CoordRect& r) = 0;
 
 private:
     const size_t height;
@@ -85,17 +87,32 @@ private:
 class TileView : public AbstractTile
 {
 public:
-    explicit TileView(AbstractTile* viewed, CoordRect r = CoordRect(0, 0, 0, 0));
+    explicit TileView(
+            AbstractTile* viewed,
+            const CoordRect& r = CoordRect(0, 0, 0, 0));
 
     bool at(coord_t r, coord_t c) const;
     void set(coord_t r, coord_t c, bool v);
 
-    TileView* makeSlice(const CoordRect& r) const;
+    TileView* makeSlice(const CoordRect& r);
 
 private:
     AbstractTile* viewed;
     coord_t off_r;
     coord_t off_c;
+};
+
+
+class TorusView : public TileView
+{
+public:
+    explicit TorusView(AbstractTile* viewed);
+
+    bool at(coord_t r, coord_t c) const;
+    void set(coord_t r, coord_t c, bool v);
+
+protected:
+    static coord_t normalizeCoord(coord_t c, coord_t dimen);
 };
 
 
@@ -108,7 +125,7 @@ public:
     bool at(coord_t r, coord_t c) const;
     void set(coord_t r, coord_t c, bool v);
 
-    Matrix* makeSlice(const CoordRect& r) const;
+    Matrix* makeSlice(const CoordRect& r);
 
 private:
     bool* data;
