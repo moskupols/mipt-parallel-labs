@@ -10,7 +10,6 @@ class Thread : Noncopyable
 public:
     virtual ~Thread();
 
-    void start();
     void join();
 
     bool isRunning() const;
@@ -22,6 +21,7 @@ protected:
 
     void exit();
 
+    void start();
     virtual void run() = 0;
 
 private:
