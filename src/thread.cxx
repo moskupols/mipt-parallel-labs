@@ -69,6 +69,19 @@ void Mutex::unlock()
 
 
 
+MutexLocker::MutexLocker(Mutex& m):
+    m(m)
+{
+    m.lock();
+}
+
+MutexLocker::~MutexLocker()
+{
+    m.unlock();
+}
+
+
+
 Cond::Cond()
 {
     pthread_cond_t d = PTHREAD_COND_INITIALIZER;

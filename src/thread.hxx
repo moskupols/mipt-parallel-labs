@@ -48,6 +48,16 @@ private:
     pthread_mutex_t descriptor;
 };
 
+class MutexLocker : Noncopyable
+{
+public:
+    MutexLocker(Mutex& m);
+    ~MutexLocker();
+
+private:
+    Mutex& m;
+};
+
 class Cond
 {
 public:
