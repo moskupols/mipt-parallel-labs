@@ -32,7 +32,7 @@ typedef AbstractTile Border;
 typedef std::vector<Border*> Borders;
 
 
-enum Side
+static enum Side
 {
     SIDE_NW = 0,
     SIDE_N = 1,
@@ -43,9 +43,16 @@ enum Side
     SIDE_SW = 6,
     SIDE_W = 7
 };
-const size_t SIDE_COUNT = SIDE_SE + 1;
+static const size_t SIDE_COUNT = SIDE_SE + 1;
 
-static Side oppositeSide(Side s);
+static const int SIDE_DELTAS[SIDE_COUNT] =
+{
+    {-1, -1}, {-1, 0}, {-1, 1},
+    {0, -1},           {0, 1},
+    {1, -1},  {1, 0},  {1, 1}
+};
+
+Side oppositeSide(Side s);
 
 
 class AbstractTile
@@ -106,6 +113,80 @@ public:
 private:
     bool* data;
 };
+
+/*
+
+class FramingTileView : public AbstractTile
+{
+public:
+    FramingTileView(
+            AbstractTile* innerTile,
+            Borders frame);
+
+    bool at(coord_t r, coord_t c) const;
+    void set(coord_t r, coord_t c, bool v);
+    AbstractTile* makeSlice(const CoordRect& r) const;
+
+protected:
+    int determineSide(coord_t r, coord_t c) const;
+    coord_t normalizeRow(coord_t r) const { return normalizeCoord(r, getHeight()); }
+    coord_t normalizeColumn(coord_t c) const { return normalizeCoord(c, getWidth()); }
+
+private:
+    coord_t normalizeCoord(coord_t x, coord_t dimen) const
+    { return x >= 0 && x < dimen ? x : 0; }
+
+    AbstractTile* innerTile;
+    Borders frame;
+};
+
+FramingTileView::FramingTileView(
+        AbstractTile* innerTile,
+        Borders frame):
+    AbstractTile(
+        innerTile->getHeight(),
+        innerTile->getWidth()),
+    innerTile(innerTile),
+    frame(frame)
+{}
+
+bool FramingTileView::at(coord_t r, coord_t c) const
+{
+    int side = determineSide(r, c);
+    AbstractTile* t = (side == -1 ? innerTile : frame[side]);
+    return t->at(normalizeRow(r), normalizeColumn(c));
+}
+
+void FramingTileView::set(coord_t r, coord_t c, bool v)
+{
+    int side = determineSide(r, c);
+    AbstractTile* t = (side == -1 ? innerTile : frame[side]);
+    return t->set(normalizeRow(r), normalizeColumn(c), v);
+}
+
+AbstractTile* FramingTileView::makeSlice(const CoordRect& r) const
+{
+    assert(r.r1 >= 0 && r.c1 >= 0
+            && r.r2 < (coord_t)getHeight() && r.c2 < (coord_t)getWidth());
+    return innerTile->makeSlice(r);
+}
+
+int FramingTileView::determineSide(coord_t r, coord_t c) const
+{
+    static int sideMap[3][3] =
+    {
+        {SIDE_NW, SIDE_N, SIDE_NE},
+        {SIDE_W,  -1,     SIDE_W},
+        {SIDE_SW, SIDE_S, SIDE_SE}
+    };
+
+    r = (r == coord_t(getHeight()) ? 2 : (r >= 0 ? 1 : 0));
+    c = (c == coord_t(getWidth()) ? 2 : (c >= 0 ? 1 : 0));
+
+    return sideMap[r][c];
+}
+
+*/
 
 } // namespace game_of_life
 
