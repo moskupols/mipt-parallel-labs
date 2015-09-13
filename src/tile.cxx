@@ -35,6 +35,13 @@ AbstractTile::~AbstractTile() {}
 size_t AbstractTile::getHeight() const { return height; }
 size_t AbstractTile::getWidth() const { return width; }
 
+void AbstractTile::assign(AbstractTile* t)
+{
+    for (size_t r = 0; r < height; ++r)
+        for (size_t c = 0; c < width; ++c)
+            set(r, c, t->at(r, c));
+}
+
 const CoordRect& AbstractTile::getBorderRect(Side s) const
 {
     return borderRects[s];

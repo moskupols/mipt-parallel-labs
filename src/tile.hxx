@@ -67,6 +67,8 @@ public:
     virtual bool at(coord_t r, coord_t c) const = 0;
     virtual void set(coord_t r, coord_t c, bool v) = 0;
 
+    void assign(AbstractTile* t);
+
     const CoordRect& getBorderRect(Side s) const;
 
     // TODO: solve problem with const-ness:
