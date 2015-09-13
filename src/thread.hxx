@@ -1,5 +1,5 @@
-#ifndef THREAD_H_INCLUDED
-#define THREAD_H_INCLUDED
+#ifndef THREAD_HXX_INCLUDED
+#define THREAD_HXX_INCLUDED
 
 #include <pthread.h>
 

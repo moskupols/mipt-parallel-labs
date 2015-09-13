@@ -1,14 +1,14 @@
-#include "gol.hxx"
+#include "game.hxx"
 
 #include <cassert>
 
 namespace game_of_life
 {
-Worker::Worker(WorkerHelper* h):
+GameIterator::GameIterator(GameIteratorHelper* h):
     helper(h)
 {}
 
-void Worker::workInfinitely()
+void GameIterator::workInfinitely()
 {
     while (true)
     {
@@ -16,7 +16,7 @@ void Worker::workInfinitely()
     }
 }
 
-void Worker::makeIteration()
+void GameIterator::makeIteration()
 {
     std::pair<AbstractTile*, AbstractTile*> tiles = helper->beginIteration();
     AbstractTile* extendedTile = tiles.first;
@@ -32,7 +32,7 @@ void Worker::makeIteration()
     helper->endIteration();
 }
 
-int Worker::countNeighborsAlive(AbstractTile* t, coord_t r, coord_t c)
+int GameIterator::countNeighborsAlive(AbstractTile* t, coord_t r, coord_t c)
 {
     int ret = 0;
     for (size_t i = 0; i < SIDE_COUNT; ++i)

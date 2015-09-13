@@ -1,12 +1,12 @@
-#ifndef GOL_H_INCLUDED
-#define GOL_H_INCLUDED
+#ifndef GAME_HXX_INCLUDED
+#define GAME_HXX_INCLUDED
 
 #include "tile.hxx"
 
 namespace game_of_life
 {
 
-class WorkerHelper
+class GameIteratorHelper
 {
 public:
     virtual std::pair<AbstractTile*, AbstractTile*> beginIteration() = 0;
@@ -14,10 +14,10 @@ public:
 };
 
 
-class Worker
+class GameIterator
 {
 public:
-    explicit Worker(WorkerHelper* c);
+    explicit GameIterator(GameIteratorHelper* c);
 
     void workInfinitely();
 
@@ -27,7 +27,7 @@ protected:
 private:
     static int countNeighborsAlive(AbstractTile* t, coord_t r, coord_t c);
 
-    WorkerHelper* helper;
+    GameIteratorHelper* helper;
 };
 
 }

@@ -1,5 +1,5 @@
-#ifndef TILE_H_INCLUDED
-#define TILE_H_INCLUDED
+#ifndef TILE_HXX_INCLUDED
+#define TILE_HXX_INCLUDED
 
 #include <vector>
 #include <cstddef>
