@@ -45,3 +45,54 @@ void Thread::wrappedRun()
     running = false;
 }
 
+
+
+Mutex::Mutex()
+{
+    pthread_mutex_t d = PTHREAD_MUTEX_INITIALIZER;
+    descriptor = d;
+}
+
+Mutex::~Mutex()
+{}
+
+void Mutex::lock()
+{
+    pthread_mutex_lock(&descriptor);
+}
+
+void Mutex::unlock()
+{
+    if (pthread_mutex_unlock(&descriptor))
+        THROW_C_ERROR();
+}
+
+
+
+Cond::Cond()
+{
+    pthread_cond_t d = PTHREAD_COND_INITIALIZER;
+    descriptor = d;
+}
+
+Cond::~Cond()
+{}
+
+void Cond::wait(Mutex& m)
+{
+    if (pthread_cond_wait(&descriptor, &m.descriptor))
+        THROW_C_ERROR();
+}
+
+void Cond::wakeOne()
+{
+    if (pthread_cond_signal(&descriptor))
+        THROW_C_ERROR();
+}
+
+void Cond::wakeAll()
+{
+    if (pthread_cond_broadcast(&descriptor))
+        THROW_C_ERROR();
+}
+

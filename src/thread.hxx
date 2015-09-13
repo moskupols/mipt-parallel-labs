@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 
-#include "utils.h"
+#include "utils.hxx"
 
 class Thread : Noncopyable
 {
@@ -31,6 +31,35 @@ private:
 
     pthread_t descriptor;
     bool running;
+};
+
+class Mutex
+{
+public:
+    Mutex();
+    ~Mutex();
+
+    void lock();
+    void unlock();
+
+private:
+    friend class Cond;
+
+    pthread_mutex_t descriptor;
+};
+
+class Cond
+{
+public:
+    Cond();
+    ~Cond();
+
+    void wait(Mutex& m);
+    void wakeOne();
+    void wakeAll();
+
+private:
+    pthread_cond_t descriptor;
 };
 
 #endif
