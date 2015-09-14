@@ -37,10 +37,10 @@ void chooseDomains(RAIt begin, RAIt end,
 
 bool near(coord_t r, coord_t c, const CoordRect& rect, TorusView* t)
 {
-    for (size_t i = 0; i < SIDE_COUNT; ++i)
+    for (size_t i = 0; i < DIRECTION_COUNT; ++i)
         if (rect.contains(
-                    t->normalizeRow(r + SIDE_DELTAS[i][0]),
-                    t->normalizeColumn(c + SIDE_DELTAS[i][1])))
+                    t->normalizeRow(r + DIRECTION[i][0]),
+                    t->normalizeColumn(c + DIRECTION[i][1])))
             return true;
     return false;
 }

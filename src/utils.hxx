@@ -14,11 +14,11 @@ private:
 };
 
 template<class T>
-class UniqueArray
+class UniqueArray : Noncopyable
 {
 public:
     explicit UniqueArray(unsigned long size):
-        data(new T[size]) 
+        data(new T[size])
     {}
 
     ~UniqueArray()

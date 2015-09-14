@@ -8,8 +8,8 @@ namespace
 int countNeighborsAlive(const AbstractTile* t, coord_t r, coord_t c)
 {
     int ret = 0;
-    for (size_t i = 0; i < SIDE_COUNT; ++i)
-        if (t->at(r + SIDE_DELTAS[i][0], c + SIDE_DELTAS[i][1]))
+    for (size_t i = 0; i < DIRECTION_COUNT; ++i)
+        if (t->at(r + DIRECTION[i][0], c + DIRECTION[i][1]))
             ++ret;
     return ret;
 }

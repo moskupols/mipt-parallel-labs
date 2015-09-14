@@ -24,42 +24,71 @@ AbstractTile::AbstractTile(size_t height, size_t width):
     height(height),
     width(width)
 {
-    coord_t h = height, w = width;
-    borderRects[SIDE_NW] = CoordRect(0,   0,   1, 1);
-    borderRects[SIDE_N ] = CoordRect(0,   0,   1, w);
-    borderRects[SIDE_NE] = CoordRect(0,   w-1, 1, w);
-    borderRects[SIDE_W ] = CoordRect(0,   0,   h, 1);
-    borderRects[SIDE_E ] = CoordRect(0,   w-1, h, w);
-    borderRects[SIDE_SW] = CoordRect(h-1, 0,   h, 1);
-    borderRects[SIDE_S ] = CoordRect(h-1, 0,   h, w);
-    borderRects[SIDE_SE] = CoordRect(h-1, w-1, h, 1);
+    for (size_t i = 0; i < SIDE_COUNT; ++i)
+        borders[i] = NULL;
+    inner = NULL;
 }
 
-AbstractTile::~AbstractTile() {}
+AbstractTile::~AbstractTile()
+{
+    for (size_t i = 0; i < SIDE_COUNT; ++i)
+        delete borders[i];
+    delete inner;
+}
 
 size_t AbstractTile::getHeight() const { return height; }
 size_t AbstractTile::getWidth() const { return width; }
 
-void AbstractTile::assign(AbstractTile* t)
+void AbstractTile::copyValues(const AbstractTile& t)
 {
     for (size_t r = 0; r < height; ++r)
         for (size_t c = 0; c < width; ++c)
-            set(r, c, t->at(r, c));
+            set(r, c, t.at(r, c));
 }
 
-const CoordRect& AbstractTile::getBorderRect(Side s) const
-{ return borderRects[s]; }
-
-Borders AbstractTile::makeBorders()
+CoordRect AbstractTile::getBorderRect(Side s) const
 {
-    Borders ret(SIDE_COUNT);
-    for (size_t s = 0; s < SIDE_COUNT; ++s)
-        ret[s] = makeBorder(static_cast<Side>(s));
-    return ret;
+    const coord_t h = height;
+    const coord_t w = width;
+    // borders are distributed like so:
+    // NNNN
+    // W  E
+    // SSSS
+    switch (s)
+    {
+    case SIDE_N: return CoordRect(0,   0,   1,   w);
+    case SIDE_W: return CoordRect(1,   0,   h-1, 1);
+    case SIDE_E: return CoordRect(1,   w-1, h-1, w);
+    case SIDE_S: return CoordRect(h-1, 0,   h,   w);
+    }
 }
 
-Border* AbstractTile::makeBorder(Side s)
-{ return makeSlice(getBorderRect(s)); }
+CoordRect AbstractTile::getInnerRect() const
+{
+    return CoordRect(1, 1, (coord_t)height-1, (coord_t)width-1);
+}
+
+Borders AbstractTile::getBorders()
+{
+    for (size_t i = 0; i < SIDE_COUNT; ++i)
+        getBorder(static_cast<Side>(i));
+    return borders;
+}
+
+Border AbstractTile::getBorder(Side s)
+{
+    return borders[s] ? borders[s] : borders[s] = makeSlice(getBorderRect(s));
+}
+
+TileView* AbstractTile::getInner()
+{
+    return inner ? inner : inner = makeSlice(getInnerRect());
+}
+
+TileView* AbstractTile::makeSlice(const CoordRect& r)
+{
+    return new TileView(this, r);
+}
 
 
 TileView::TileView():
@@ -102,7 +131,9 @@ void TileView::set(coord_t r, coord_t c, bool v)
 { return viewed->set(off_r + r, off_c + c, v); }
 
 TileView* TileView::makeSlice(const CoordRect& reg)
-{ return new TileView(this, reg); }
+{
+    return new TileView(viewed, reg.shifted(off_r, off_c));
+}
 
 
 TorusView::TorusView(AbstractTile* viewed):
@@ -134,27 +165,25 @@ Matrix::Matrix(size_t height, size_t width):
     data(new bool(height * width))
 {}
 
+Matrix::Matrix(const AbstractTile& t):
+    AbstractTile(t.getHeight(), t.getWidth()),
+    data(new bool(t.getHeight() * t.getWidth()))
+{
+    AbstractTile::copyValues(t);
+}
+
 Matrix::~Matrix() { delete[] data; }
 
 bool Matrix::at(coord_t r, coord_t c) const { return data[r * getWidth() + c]; }
 
 void Matrix::set(coord_t r, coord_t c, bool v) { data[r * getWidth() + c] = v; }
 
-Matrix* Matrix::makeSlice(const CoordRect& reg)
+void Matrix::copyValues(const Matrix& m)
 {
-    Matrix* ret = new Matrix(reg.getHeight(), reg.getWidth());
+    assert(getWidth() == m.getWidth());
+    assert(getHeight() == m.getHeight());
 
-    size_t copyWidth = reg.getWidth();
-    size_t copyStride = getWidth();
-    bool* beginStart = data + getWidth() * reg.r1 + reg.c1;
-    bool* endStart = beginStart + copyStride * reg.getHeight();
-
-    for (bool* p = beginStart, t = ret->data;
-         p != endStart;
-         p += copyStride, t += copyWidth)
-        memcpy((void*)t, (void*)p, copyWidth * sizeof(bool));
-
-    return ret;
+    memcpy(data, m.data, getWidth() * getHeight() * sizeof(data[0]));
 }
 
 Matrix m(2, 2);

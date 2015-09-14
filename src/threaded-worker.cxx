@@ -64,14 +64,12 @@ void ThreadedWorker::run()
     coord_t h = domain->getHeight();
     coord_t w = domain->getWidth();
 
-    CoordRect innerRect(1, 1, h - 1, w - 1);
-
-    TileView innerResult(domain, innerRect);
-    Borders resultBorders = TileView(domain).makeBorders();
+    TileView& innerResult = *domain->getInner();
+    Borders resultBorders = domain->getBorders();
 
     Matrix tempDomain(h, w);
-    TileView innerTemp(&tempDomain, innerRect);
-    Borders tempBorders = TileView(&tempDomain).makeBorders();
+    TileView& innerTemp = *tempDomain.getInner();
+    Borders tempBorders = tempDomain.getBorders();
 
     size_t nsz = neighShared.size();
 
@@ -89,14 +87,8 @@ void ThreadedWorker::run()
         for (size_t i = 0; i < nsz; ++i)
             neighShared[i]->wakeWhenCalcs(myShared.iterationCalced);
 
-        domain->assign(&tempDomain);
+        domain->copyValues(tempDomain);
         myShared.incIterationPublished();
-    }
-
-    for (size_t i = 0; i < nsz; ++i)
-    {
-        delete resultBorders[i];
-        delete tempBorders[i];
     }
 }
 
