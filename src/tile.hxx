@@ -93,6 +93,7 @@ private:
 class TileView : public AbstractTile
 {
 public:
+    TileView();
     explicit TileView(AbstractTile* viewed);
     explicit TileView(TileView* viewed);
     TileView(AbstractTile* viewed, const CoordRect& r);

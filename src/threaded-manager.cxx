@@ -10,6 +10,24 @@
 namespace game_of_life
 {
 
+bool ThreadedManagerShared::wakeWhenNextIterationNeeded(int have)
+{
+    MutexLocker locker(stopMutex);
+    while (stop != -1 && stop <= have)
+        stopCond.wait(stopMutex);
+    return stop != -1;
+}
+
+int ThreadedManagerShared::getStop() const
+{ return stop; }
+
+void ThreadedManagerShared::setStop(int newStop)
+{
+    MutexLocker locker(stopMutex);
+    stop = newStop;
+    stopCond.wakeAll();
+}
+
 ThreadedManager::ThreadedManager():
     pauseFlag(false),
     runMore(0),

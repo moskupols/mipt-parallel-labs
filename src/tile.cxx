@@ -62,6 +62,10 @@ Border* AbstractTile::makeBorder(Side s)
 { return makeSlice(getBorderRect(s)); }
 
 
+TileView::TileView():
+    AbstractTile(0, 0)
+{}
+
 TileView::TileView(AbstractTile* viewed):
     AbstractTile(viewed->getHeight(), viewed->getWidth()),
     viewed(viewed),
