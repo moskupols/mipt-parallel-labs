@@ -14,6 +14,11 @@ CoordRect::CoordRect(coord_t r1, coord_t c1, coord_t r2, coord_t c2):
 size_t CoordRect::getHeight() const { return r2 - r1; }
 size_t CoordRect::getWidth() const { return c2 - c1; }
 
+bool CoordRect::contains(coord_t r, coord_t c) const
+{ return (r >= r1 && r < r2) && (c >= c1 && c < c2); }
+
+CoordRect CoordRect::shifted(coord_t dr, coord_t dc) const
+{ return CoordRect(r1 + dr, c1 + dc, r2 + dr, c2 + dc); }
 
 AbstractTile::AbstractTile(size_t height, size_t width):
     height(height),
@@ -43,9 +48,7 @@ void AbstractTile::assign(AbstractTile* t)
 }
 
 const CoordRect& AbstractTile::getBorderRect(Side s) const
-{
-    return borderRects[s];
-}
+{ return borderRects[s]; }
 
 Borders AbstractTile::makeBorders()
 {
@@ -56,10 +59,22 @@ Borders AbstractTile::makeBorders()
 }
 
 Border* AbstractTile::makeBorder(Side s)
-{
-    return makeSlice(getBorderRect(s));
-}
+{ return makeSlice(getBorderRect(s)); }
 
+
+TileView::TileView(AbstractTile* viewed):
+    AbstractTile(viewed->getHeight(), viewed->getWidth()),
+    viewed(viewed),
+    off_r(0),
+    off_c(0)
+{}
+
+TileView::TileView(TileView* that):
+    AbstractTile(*that),
+    viewed(that->viewed),
+    off_r(that->off_r),
+    off_c(that->off_c)
+{}
 
 TileView::TileView(AbstractTile* viewed, const CoordRect& r):
     AbstractTile(r.getHeight(), r.getWidth()),
@@ -68,20 +83,22 @@ TileView::TileView(AbstractTile* viewed, const CoordRect& r):
     off_c(r.c1)
 {}
 
-bool TileView::at(coord_t r, coord_t c) const
+TileView& TileView::operator=(const TileView& that)
 {
-    return viewed->at(off_r + r, off_c + c);
+    viewed = that.viewed;
+    off_r = that.off_r;
+    off_c = that.off_c;
+    return *this;
 }
+
+bool TileView::at(coord_t r, coord_t c) const
+{ return viewed->at(off_r + r, off_c + c); }
 
 void TileView::set(coord_t r, coord_t c, bool v)
-{
-    return viewed->set(off_r + r, off_c + c, v);
-}
+{ return viewed->set(off_r + r, off_c + c, v); }
 
 TileView* TileView::makeSlice(const CoordRect& reg)
-{
-    return new TileView(this, reg);
-}
+{ return new TileView(this, reg); }
 
 
 TorusView::TorusView(AbstractTile* viewed):
@@ -96,17 +113,16 @@ bool TorusView::at(coord_t r, coord_t c) const
 }
 
 void TorusView::set(coord_t r, coord_t c, bool v)
-{
-    return TileView::set(
-            normalizeCoord(r, getHeight()),
-            normalizeCoord(c, getWidth()),
-            v);
-}
+{ return TileView::set(normalizeRow(r), normalizeColumn(c), v); }
+
+coord_t TorusView::normalizeRow(coord_t r) const
+{ return normalizeCoord(r, getHeight()); }
+
+coord_t TorusView::normalizeColumn(coord_t c) const
+{ return normalizeCoord(c, getWidth()); }
 
 coord_t TorusView::normalizeCoord(coord_t c, coord_t dimen)
-{
-    return ((c % dimen) + dimen) % dimen;
-}
+{ return ((c % dimen) + dimen) % dimen; }
 
 
 Matrix::Matrix(size_t height, size_t width):

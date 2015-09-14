@@ -23,6 +23,10 @@ struct CoordRect
 
     size_t getHeight() const;
     size_t getWidth() const;
+
+    bool contains(coord_t r, coord_t c) const;
+
+    CoordRect shifted(coord_t dr, coord_t dc) const;
 };
 
 
@@ -89,9 +93,11 @@ private:
 class TileView : public AbstractTile
 {
 public:
-    explicit TileView(
-            AbstractTile* viewed,
-            const CoordRect& r = CoordRect(0, 0, 0, 0));
+    explicit TileView(AbstractTile* viewed);
+    explicit TileView(TileView* viewed);
+    TileView(AbstractTile* viewed, const CoordRect& r);
+
+    TileView& operator = (const TileView& that);
 
     bool at(coord_t r, coord_t c) const;
     void set(coord_t r, coord_t c, bool v);
@@ -113,6 +119,8 @@ public:
     bool at(coord_t r, coord_t c) const;
     void set(coord_t r, coord_t c, bool v);
 
+    coord_t normalizeRow(coord_t r) const;
+    coord_t normalizeColumn(coord_t c) const;
 protected:
     static coord_t normalizeCoord(coord_t c, coord_t dimen);
 };
