@@ -1,0 +1,121 @@
+#include <memory>
+
+#include "threaded-manager.hxx"
+#include "threaded-worker.hxx"
+
+#include "tile.hxx"
+
+#include "utils.hxx"
+
+namespace game_of_life
+{
+
+ThreadedManager::ThreadedManager():
+    pauseFlag(false),
+    runMore(0),
+    shutdownFlag(false)
+{}
+
+void ThreadedManager::start(Matrix* t, int concurrency)
+{
+    this->matrix = t;
+    this->concurrency = concurrency;
+
+    Thread::start();
+}
+
+ThreadedManagerShared* ThreadedManager::getShared()
+{ return &myShared; }
+
+void ThreadedManager::pauseAll()
+{
+    MutexLocker locker(mutex);
+    pauseFlag = true;
+    cond.wakeOne();
+}
+
+void ThreadedManager::runForMore(int iterations)
+{
+    MutexLocker locker(mutex);
+    pauseFlag = false;
+    runMore += iterations;
+}
+
+void ThreadedManager::shutdown()
+{
+    MutexLocker locker(mutex);
+    shutdownFlag = true;
+}
+
+void ThreadedManager::run()
+{
+    UniqueArray<ThreadedWorker> workers(concurrency);
+    UniqueArray<TileView> domains(concurrency);
+
+    TorusView torus(matrix);
+
+    std::vector<CoordRect> domainRects = chooseDomains(&torus, concurrency);
+    for (int i = 0; i < concurrency; ++i)
+        domains[i] = TileView(&torus, domainRects[i]);
+
+    std::vector<std::vector<int> > neigs = makeNeighbors(&torus, domainRects);
+
+    for (int i = 0; i < concurrency; ++i)
+    {
+        std::vector<ThreadedWorkerShared*> shareds(neigs[i].size());
+        for (size_t j = 0; j < neigs[i].size(); ++j)
+            shareds[j] = workers[neigs[i][j]].getShared();
+        workers[i].start(&myShared, &domains[i], shareds);
+    }
+
+    int stop = 0;
+    while (true)
+    {
+        int runMore = 0;
+        bool pauseFlag = false;
+        {
+            MutexLocker locker(mutex);
+            while (!this->pauseFlag
+                    && !this->runMore
+                    && !this->shutdownFlag)
+                cond.wait(mutex);
+
+            if (this->shutdownFlag)
+                break;
+            else if (this->pauseFlag)
+                pauseFlag = true;
+            else
+                runMore = this->runMore;
+            this->pauseFlag = false;
+            this->runMore = 0;
+        }
+
+        if (pauseFlag)
+        {
+            myShared.setStop(0);
+            for (int i = 0; i < concurrency; ++i)
+            {
+                int newStop = std::min(stop,
+                        workers[i].getShared()->getIterationPublished() + 1);
+                if (newStop > myShared.stop)
+                    myShared.setStop(newStop);
+            }
+            for (int i = 0; i < concurrency; ++i)
+                workers[i].getShared()->wakeWhenPublishes(myShared.stop);
+            stop = myShared.stop;
+        }
+
+        if (runMore)
+        {
+            stop += runMore;
+            myShared.setStop(stop);
+        }
+    }
+    myShared.setStop(-1);
+
+    for (int i = 0; i < concurrency; ++i)
+        workers[i].join();
+}
+
+} // namespace game_of_life
+
