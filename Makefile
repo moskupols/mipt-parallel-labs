@@ -1,5 +1,5 @@
 CXX := g++
-CXX_FLAGS := -Wall -Wextra -fstack-protector -fsanitize=address -fsanitize=undefined -ggdb
+CXX_FLAGS := -std=c++03 -Wall -Wextra -fstack-protector -fsanitize=address -fsanitize=undefined -ggdb
 LD_FLAGS := -pthread
 
 SOURCES = $(wildcard src/*.cxx)
