@@ -46,7 +46,7 @@ void ThreadedWorkerShared::incIterationPublished()
 
 
 void ThreadedWorker::start(
-        ThreadedManager* manager,
+        ThreadedManagerShared* manager,
         AbstractTile* domain,
         const std::vector<ThreadedWorkerShared*>& neighShared)
 {
@@ -73,25 +73,27 @@ void ThreadedWorker::run()
     TileView innerTemp(&tempDomain, innerRect);
     Borders tempBorders = TileView(&tempDomain).makeBorders();
 
+    size_t nsz = neighShared.size();
+
     while (manager->wakeWhenNextIterationNeeded(myShared.iterationPublished))
     {
         makeIteration(&innerResult, &innerTemp);
 
-        for (size_t i = 0; i < SIDE_COUNT; ++i)
+        for (size_t i = 0; i < nsz; ++i)
             neighShared[i]->wakeWhenPublishes(myShared.iterationPublished);
 
-        for (size_t i = 0; i < SIDE_COUNT; ++i)
+        for (size_t i = 0; i < nsz; ++i)
             makeIteration(resultBorders[i], tempBorders[i]);
 
         myShared.incIterationCalced();
-        for (size_t i = 0; i < SIDE_COUNT; ++i)
+        for (size_t i = 0; i < nsz; ++i)
             neighShared[i]->wakeWhenCalcs(myShared.iterationCalced);
 
         domain->assign(&tempDomain);
         myShared.incIterationPublished();
     }
 
-    for (size_t i = 0; i < SIDE_COUNT; ++i)
+    for (size_t i = 0; i < nsz; ++i)
     {
         delete resultBorders[i];
         delete tempBorders[i];

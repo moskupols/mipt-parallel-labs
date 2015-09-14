@@ -8,7 +8,7 @@
 namespace game_of_life
 {
 
-class ThreadedManager;
+class ThreadedManagerShared;
 class ThreadedWorker;
 
 class ThreadedWorkerShared
@@ -40,7 +40,7 @@ class ThreadedWorker : public Thread, protected Worker
 {
 public:
     void start(
-            ThreadedManager* manager,
+            ThreadedManagerShared* manager,
             AbstractTile* domain,
             const std::vector<ThreadedWorkerShared*>& neighShared);
 
@@ -52,7 +52,7 @@ protected:
 private:
     ThreadedWorkerShared myShared;
 
-    ThreadedManager* manager;
+    ThreadedManagerShared* manager;
     std::vector<ThreadedWorkerShared*> neighShared;
     AbstractTile* domain;
 };
