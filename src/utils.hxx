@@ -31,11 +31,14 @@ public:
     T* const data;
 };
 
+void throwCError(int line, const char* file);
+
 #ifndef NULL
 #define NULL 0
 #endif
 
-#define THROW_C_ERROR()
+#define THROW_C_ERROR() \
+    throwCError(__LINE__, __FILE__)
 
 #endif
 
