@@ -9,7 +9,7 @@ ResourceMutex<ostream> cerrMutex(cerr);
 void out(ResourceMutex<ostream>& outRes, const string& msg)
 {
     ResourceLocker<ostream> locker(outRes);
-    locker.get() << msg;
+    (locker.get() << msg).flush();
 }
 
 void out(const string& msg) { out(coutMutex, msg); }
