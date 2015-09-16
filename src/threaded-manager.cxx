@@ -34,6 +34,11 @@ ThreadedManager::ThreadedManager():
     shutdownFlag(false)
 {}
 
+ThreadedManager::~ThreadedManager()
+{
+    assert(getState() == NOT_STARTED || getState() == FINISHED);
+}
+
 void ThreadedManager::start(Matrix* t, int concurrency)
 {
     this->matrix = t;
