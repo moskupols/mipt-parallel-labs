@@ -72,5 +72,36 @@ private:
     pthread_cond_t descriptor;
 };
 
+template<class R> class ResourceLocker;
+
+template<class R>
+class ResourceMutex
+{
+public:
+    ResourceMutex(R& r):
+        res(r)
+    {}
+
+private:
+    friend class ResourceLocker<R>;
+
+    R& res;
+    Mutex m;
+};
+
+template<class R>
+class ResourceLocker : MutexLocker
+{
+public:
+    ResourceLocker(ResourceMutex<R>& r):
+        MutexLocker(r.m),
+        r(r)
+    {}
+
+    R& get() { return r.res; }
+private:
+    ResourceMutex<R>& r;
+};
+
 #endif
 
