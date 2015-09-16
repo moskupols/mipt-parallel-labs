@@ -56,11 +56,11 @@ static const int DIRECTION[DIRECTION_COUNT][2] =
 class AbstractTile
 {
 public:
-    AbstractTile(size_t height, size_t width);
+    AbstractTile();
     virtual ~AbstractTile();
 
-    size_t getHeight() const;
-    size_t getWidth() const;
+    virtual size_t getHeight() const = 0;
+    virtual size_t getWidth() const = 0;
 
     virtual bool at(coord_t r, coord_t c) const = 0;
     virtual void set(coord_t r, coord_t c, bool v) = 0;
@@ -77,9 +77,6 @@ public:
     virtual TileView* makeSlice(const CoordRect& r);
 
 private:
-    const size_t height;
-    const size_t width;
-
     Border borders[SIDE_COUNT];
     TileView* inner;
 };
@@ -95,6 +92,9 @@ public:
 
     TileView& operator = (const TileView& that);
 
+    size_t getWidth() const;
+    size_t getHeight() const;
+
     bool at(coord_t r, coord_t c) const;
     void set(coord_t r, coord_t c, bool v);
 
@@ -102,8 +102,7 @@ public:
 
 private:
     AbstractTile* viewed;
-    coord_t off_r;
-    coord_t off_c;
+    CoordRect window;
 };
 
 
@@ -122,20 +121,26 @@ protected:
 };
 
 
-class Matrix : public AbstractTile, Noncopyable
+class Matrix : public AbstractTile
 {
 public:
+    Matrix();
     Matrix(size_t height, size_t width);
     explicit Matrix(const AbstractTile& t);
     explicit Matrix(const Matrix& m);
     ~Matrix();
 
+    size_t getHeight() const;
+    size_t getWidth() const;
+
     bool at(coord_t r, coord_t c) const;
     void set(coord_t r, coord_t c, bool v);
 
-    void copyValues(const Matrix& m);
+    void operator=(const Matrix& m);
 
 private:
+    size_t height;
+    size_t width;
     bool* data;
 };
 

@@ -20,9 +20,7 @@ bool CoordRect::contains(coord_t r, coord_t c) const
 CoordRect CoordRect::shifted(coord_t dr, coord_t dc) const
 { return CoordRect(r1 + dr, c1 + dc, r2 + dr, c2 + dc); }
 
-AbstractTile::AbstractTile(size_t height, size_t width):
-    height(height),
-    width(width)
+AbstractTile::AbstractTile()
 {
     for (size_t i = 0; i < SIDE_COUNT; ++i)
         borders[i] = NULL;
@@ -36,20 +34,18 @@ AbstractTile::~AbstractTile()
     delete inner;
 }
 
-size_t AbstractTile::getHeight() const { return height; }
-size_t AbstractTile::getWidth() const { return width; }
-
 void AbstractTile::copyValues(const AbstractTile& t)
 {
-    for (size_t r = 0; r < height; ++r)
-        for (size_t c = 0; c < width; ++c)
+    size_t h = getHeight(), w = getWidth();
+    for (size_t r = 0; r < h; ++r)
+        for (size_t c = 0; c < w; ++c)
             set(r, c, t.at(r, c));
 }
 
 CoordRect AbstractTile::getBorderRect(Side s) const
 {
-    const coord_t h = height;
-    const coord_t w = width;
+    const coord_t h = getHeight();
+    const coord_t w = getWidth();
     // borders are distributed like so:
     // NNNN
     // W  E
@@ -65,7 +61,7 @@ CoordRect AbstractTile::getBorderRect(Side s) const
 
 CoordRect AbstractTile::getInnerRect() const
 {
-    return CoordRect(1, 1, (coord_t)height-1, (coord_t)width-1);
+    return CoordRect(1, 1, (coord_t)getHeight()-1, (coord_t)getWidth()-1);
 }
 
 Borders AbstractTile::getBorders()
@@ -91,48 +87,50 @@ TileView* AbstractTile::makeSlice(const CoordRect& r)
 }
 
 
-TileView::TileView():
-    AbstractTile(0, 0)
+TileView::TileView()
 {}
 
 TileView::TileView(AbstractTile* viewed):
-    AbstractTile(viewed->getHeight(), viewed->getWidth()),
     viewed(viewed),
-    off_r(0),
-    off_c(0)
+    window(0, 0, viewed->getHeight(), viewed->getWidth())
 {}
 
 TileView::TileView(TileView* that):
-    AbstractTile(*that),
     viewed(that->viewed),
-    off_r(that->off_r),
-    off_c(that->off_c)
+    window(that->window)
 {}
 
 TileView::TileView(AbstractTile* viewed, const CoordRect& r):
-    AbstractTile(r.getHeight(), r.getWidth()),
     viewed(viewed),
-    off_r(r.r1),
-    off_c(r.c1)
+    window(r)
 {}
 
 TileView& TileView::operator=(const TileView& that)
 {
     viewed = that.viewed;
-    off_r = that.off_r;
-    off_c = that.off_c;
+    window = that.window;
     return *this;
 }
 
+size_t TileView::getWidth() const
+{
+    return window.getWidth();
+}
+
+size_t TileView::getHeight() const
+{
+    return window.getHeight();
+}
+
 bool TileView::at(coord_t r, coord_t c) const
-{ return viewed->at(off_r + r, off_c + c); }
+{ return viewed->at(window.r1 + r, window.c1 + c); }
 
 void TileView::set(coord_t r, coord_t c, bool v)
-{ return viewed->set(off_r + r, off_c + c, v); }
+{ return viewed->set(window.r1 + r, window.c1 + c, v); }
 
 TileView* TileView::makeSlice(const CoordRect& reg)
 {
-    return new TileView(viewed, reg.shifted(off_r, off_c));
+    return new TileView(viewed, reg.shifted(window.r1, window.c1));
 }
 
 
@@ -160,30 +158,42 @@ coord_t TorusView::normalizeCoord(coord_t c, coord_t dimen)
 { return ((c % dimen) + dimen) % dimen; }
 
 
+Matrix::Matrix()
+{}
+
 Matrix::Matrix(size_t height, size_t width):
-    AbstractTile(height, width),
-    data(new bool(height * width))
+    height(height),
+    width(width),
+    data(new bool[height * width])
 {}
 
 Matrix::Matrix(const AbstractTile& t):
-    AbstractTile(t.getHeight(), t.getWidth()),
-    data(new bool(t.getHeight() * t.getWidth()))
+    height(t.getHeight()),
+    width(t.getWidth()),
+    data(new bool[height * width])
 {
     AbstractTile::copyValues(t);
 }
 
 Matrix::~Matrix() { delete[] data; }
 
+size_t Matrix::getHeight() const { return height; }
+size_t Matrix::getWidth() const { return width; }
+
 bool Matrix::at(coord_t r, coord_t c) const { return data[r * getWidth() + c]; }
 
 void Matrix::set(coord_t r, coord_t c, bool v) { data[r * getWidth() + c] = v; }
 
-void Matrix::copyValues(const Matrix& m)
+void Matrix::operator=(const Matrix& m)
 {
-    assert(getWidth() == m.getWidth());
-    assert(getHeight() == m.getHeight());
-
-    memcpy(data, m.data, getWidth() * getHeight() * sizeof(data[0]));
+    if (width != m.width || height != m.height)
+    {
+        width = m.width;
+        height = m.height;
+        delete[] data;
+        data = new bool[width * height];
+    }
+    memcpy(data, m.data, height * width * sizeof(data[0]));
 }
 
 Matrix m(2, 2);
