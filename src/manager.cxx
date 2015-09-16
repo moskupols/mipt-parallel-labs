@@ -90,5 +90,44 @@ vector<vector<int> > Manager::makeNeighbors(
     return ret;
 }
 
+Manager::Manager():
+    s(NOT_STARTED)
+{}
+
+Manager::State Manager::getState() const
+{
+    return s;
+}
+
+void Manager::wakeWhenStateIsNot(State s) const
+{
+    MutexLocker locker(stateMutex);
+    while (getState() == s)
+        stateCond.wait(stateMutex);
+}
+
+void Manager::wakeWhenStateIs(State s) const
+{
+    MutexLocker locker(stateMutex);
+    while (getState() != s)
+        stateCond.wait(stateMutex);
+}
+
+void Manager::setState(State s)
+{
+    if (this->s == s)
+        return;
+    MutexLocker locker(stateMutex);
+    this->s = s;
+    stateCond.wakeAll();
+}
+
+void Manager::start()
+{
+    setState(RUNNING);
+    Thread::start();
+    setState(FINISHED);
+}
+
 } // namespace game_of_life
 

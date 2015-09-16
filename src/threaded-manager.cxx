@@ -39,7 +39,7 @@ void ThreadedManager::start(Matrix* t, int concurrency)
     this->matrix = t;
     this->concurrency = concurrency;
 
-    Thread::start();
+    Manager::start();
 }
 
 ThreadedManagerShared* ThreadedManager::getShared()
@@ -87,6 +87,7 @@ void ThreadedManager::run()
     }
 
     int stop = 0;
+    setState(STOPPED);
     while (true)
     {
         int runMore = 0;
@@ -121,12 +122,14 @@ void ThreadedManager::run()
             for (int i = 0; i < concurrency; ++i)
                 workers[i].getShared()->wakeWhenPublishes(myShared.stop);
             stop = myShared.stop;
+            setState(STOPPED);
         }
 
         if (runMore)
         {
             stop += runMore;
             myShared.setStop(stop);
+            setState(RUNNING);
         }
     }
     myShared.setStop(-1);

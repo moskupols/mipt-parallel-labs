@@ -27,7 +27,7 @@ private:
     Cond stopCond;
 };
 
-class ThreadedManager : public Thread, protected Manager
+class ThreadedManager : public Manager
 {
 public:
     ThreadedManager();
