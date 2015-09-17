@@ -101,7 +101,7 @@ TileView::TileView()
 
 TileView::TileView(AbstractTile* viewed):
     viewed(viewed),
-    window(0, 0, viewed->getHeight(), viewed->getWidth())
+    window(0, 0, -10, -10)
 {}
 
 TileView::TileView(TileView* that):
@@ -123,12 +123,12 @@ TileView& TileView::operator=(const TileView& that)
 
 size_t TileView::getWidth() const
 {
-    return window.getWidth();
+    return window.r2 != -10 ? window.getWidth() : viewed->getWidth();
 }
 
 size_t TileView::getHeight() const
 {
-    return window.getHeight();
+    return window.r2 != -10 ? window.getHeight() : viewed->getHeight();
 }
 
 bool TileView::at(coord_t r, coord_t c) const
