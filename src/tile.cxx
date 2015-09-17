@@ -1,6 +1,7 @@
 #include "tile.hxx"
 
 #include <cstring>
+#include <iostream>
 
 namespace game_of_life
 {
@@ -84,6 +85,14 @@ TileView* AbstractTile::getInner()
 TileView* AbstractTile::makeSlice(const CoordRect& r)
 {
     return new TileView(this, r);
+}
+
+void AbstractTile::output(std::ostream& out) const
+{
+    out << getHeight() << " x " << getWidth() << std::endl;
+    for (size_t i = 0; i < getHeight(); ++i)
+        for (size_t j = 0; j < getWidth(); ++j)
+            out << (at(i, j) ? 1 : 0) << " \n"[j+1 == getWidth()];
 }
 
 

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cstddef>
+#include <iostream>
 
 #include "utils.hxx"
 
@@ -76,6 +77,7 @@ public:
 
     virtual TileView* makeSlice(const CoordRect& r);
 
+    virtual void output(std::ostream& out) const;
 private:
     Border borders[SIDE_COUNT];
     TileView* inner;
