@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <memory>
+#include <cstdlib>
 
 #include "output.hxx"
 #include "threaded-manager.hxx"
@@ -10,7 +11,17 @@
 #include "exceptions.hxx"
 
 using namespace game_of_life;
-using namespace std;
+
+using std::vector;
+using std::string;
+
+using std::domain_error;
+
+using std::map;
+
+using std::cin;
+using std::endl;
+using std::istringstream;
 
 vector<string> split(const string& s)
 {
@@ -64,39 +75,99 @@ void start(Params p)
     try
     {
         int concurrency = toInt(p[0]);
-        if (p.size() == 3)
-        {
+        // if (p.size() == 3)
+        // {
             int h = toInt(p[1]), w = toInt(p[2]);
             matrix = Matrix(h, w);
             matrix.set(0, 0, true);
             matrix.set(1, 1, true);
-        }
-        else
-        {
+        // }
+        // else
+        // {
 
-        }
-        // manager.start(&matrix, concurrency);
+        // }
+        manager.start(&matrix, concurrency);
     }
-    catch (exception& e)
+    catch (domain_error& e)
     {
         throw IncorrectCommandException(TAG + e.what());
     }
 }
 
 void status(Params p)
-{}
+{
+    static const string TAG("STATUS: ");
+    checkParamCount(TAG, p, 0, 0);
+
+    Manager::State state = manager.getState();
+
+    OstreamLocker lock(coutMutex);
+    lock.get() << "Status is " << state << endl;
+    if (state == Manager::NOT_STARTED)
+        return;
+
+    matrix.output(lock.get());
+}
 
 void run(Params p)
-{}
+{
+    static const string TAG("RUN: ");
+    checkParamCount(TAG, p, 1, 1);
+
+    int runs;
+    switch (manager.getState())
+    {
+    case Manager::NOT_STARTED:
+        throw IncorrectCommandException(
+                TAG + "task unknown, use START to initialize.");
+    case Manager::STOPPED:
+        runs = toInt(p[0]);
+        debugLn(TAG + "trying to add " + p[0] + "iterations");
+        manager.runForMore(runs);
+        break;
+    default:
+        throw IncorrectCommandException(TAG + "system is busy");
+    }
+}
 
 void stop(Params p)
-{}
+{
+    static const string TAG("STOP: ");
+    checkParamCount(TAG, p, 0, 0);
+
+    switch (manager.getState())
+    {
+    case Manager::RUNNING:
+        debugLn(TAG + "stopping");
+        manager.pauseAll();
+        manager.wakeWhenStateIs(Manager::STOPPED);
+        debugLn(TAG + "awake and stopped");
+        break;
+    default:
+        throw IncorrectCommandException(TAG + "not running");
+    }
+}
 
 void quit(Params p)
-{}
+{
+    static const string TAG("QUIT: ");
+    checkParamCount(TAG, p, 0, 0);
+
+    debugLn(TAG);
+    if (manager.getState() != Manager::NOT_STARTED)
+    {
+        debugLn(TAG + "manager has started, trying to shut him");
+        manager.shutdown();
+        manager.wakeWhenStateIs(Manager::FINISHED);
+        debugLn(TAG + "awake and shut");
+    }
+    exit(0);
+}
 
 void unknownCommand(const string& s)
-{}
+{
+    throw IncorrectCommandException(string("\"") + s + "\" is not supported ._.");
+}
 
 int main()
 {
@@ -108,6 +179,7 @@ int main()
     cmdMap["QUIT"] = quit;
 
     string line;
+    debugLn("---------------- RESTART ----------------------");
     while (out("game-of-life: "), getline(cin, line))
     {
         vector<string> words = split(line);
@@ -134,5 +206,7 @@ int main()
             outLn(e.what());
         }
     }
+    outLn("quit");
+    quit(vector<string>());
 }
 
