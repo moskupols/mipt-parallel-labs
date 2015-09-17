@@ -4,16 +4,35 @@
 #include <iostream>
 #include "thread.hxx"
 
-extern ResourceMutex<std::ostream> coutMutex;
-extern ResourceMutex<std::ostream> cerrMutex;
+typedef ResourceMutex<std::ostream> OstreamMutex;
 
-void out(ResourceMutex<std::ostream>& outRes, const std::string& msg);
+class OstreamLocker : public ResourceLocker<std::ostream>
+{
+public:
+    OstreamLocker(OstreamMutex& m):
+        ResourceLocker<std::ostream>(m)
+    {}
+
+    ~OstreamLocker()
+    {
+        get().flush();
+    }
+};
+
+extern OstreamMutex coutMutex;
+extern OstreamMutex cerrMutex;
+extern OstreamMutex debugMutex;
+
+void out(OstreamMutex& mut, const std::string& msg);
 
 void out(const std::string& msg);
 void outLn(const std::string& msg);
 
 void err(const std::string& msg);
 void errLn(const std::string& msg);
+
+void debug(const std::string& msg);
+void debugLn(const std::string& msg);
 
 #endif
 
