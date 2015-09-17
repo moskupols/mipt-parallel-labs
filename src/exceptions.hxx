@@ -12,5 +12,13 @@ public:
     {}
 };
 
+class CLevelException : public std::runtime_error
+{
+public:
+    explicit CLevelException(const std::string& what):
+        std::runtime_error(what)
+    {}
+};
+
 #endif
 
