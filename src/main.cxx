@@ -86,7 +86,7 @@ void start(Params p)
         // {
 
         // }
-        manager.start(&matrix, concurrency);
+        manager.start(matrix, concurrency);
     }
     catch (domain_error& e)
     {

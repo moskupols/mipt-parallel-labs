@@ -33,9 +33,9 @@ public:
     ThreadedManager();
     ~ThreadedManager();
 
-    void start(Matrix* m, int concurrency);
+    void start(Matrix& m, int concurrency);
 
-    ThreadedManagerShared* getShared();
+    ThreadedManagerShared& getShared();
 
     void pauseAll();
     void runForMore(int iterations);

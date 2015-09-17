@@ -46,36 +46,36 @@ void ThreadedWorkerShared::incIterationPublished()
 
 
 void ThreadedWorker::start(
-        ThreadedManagerShared* manager,
-        AbstractTile* domain,
+        ThreadedManagerShared& manager,
+        AbstractTile& domain,
         const std::vector<ThreadedWorkerShared*>& neighShared)
 {
-    this->manager = manager;
+    this->manager = &manager;
     this->neighShared = neighShared;
-    this->domain = domain;
+    this->domain = &domain;
 
     Thread::start();
 }
 
-ThreadedWorkerShared* ThreadedWorker::getShared() { return &myShared; }
+ThreadedWorkerShared& ThreadedWorker::getShared() { return myShared; }
 
 void ThreadedWorker::run()
 {
     coord_t h = domain->getHeight();
     coord_t w = domain->getWidth();
 
-    TileView& innerResult = *domain->getInner();
+    TileView innerResult = domain->getInner();
     Borders resultBorders = domain->getBorders();
 
     Matrix tempDomain(h, w);
-    TileView& innerTemp = *tempDomain.getInner();
+    TileView innerTemp = tempDomain.getInner();
     Borders tempBorders = tempDomain.getBorders();
 
     size_t nsz = neighShared.size();
 
     while (manager->wakeWhenNextIterationNeeded(myShared.iterationPublished))
     {
-        makeIteration(&innerResult, &innerTemp);
+        makeIteration(innerResult, innerTemp);
 
         for (size_t i = 0; i < nsz; ++i)
             neighShared[i]->wakeWhenPublishes(myShared.iterationPublished);

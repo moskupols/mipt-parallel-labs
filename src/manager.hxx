@@ -15,9 +15,9 @@ class TorusView;
 class Manager : protected Thread
 {
 public:
-    static std::vector<CoordRect> chooseDomains(AbstractTile* t, int parts);
+    static std::vector<CoordRect> chooseDomains(const AbstractTile& t, int parts);
     static std::vector<std::vector<int> > makeNeighbors(
-            TorusView* t, const std::vector<CoordRect>& r);
+            const TorusView& t, const std::vector<CoordRect>& r);
 
     enum State
     {

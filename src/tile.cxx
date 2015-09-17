@@ -21,17 +21,14 @@ bool CoordRect::contains(coord_t r, coord_t c) const
 CoordRect CoordRect::shifted(coord_t dr, coord_t dc) const
 { return CoordRect(r1 + dr, c1 + dc, r2 + dr, c2 + dc); }
 
-AbstractTile::AbstractTile()
-{
-    for (size_t i = 0; i < SIDE_COUNT; ++i)
-        borders[i] = NULL;
-    inner = NULL;
-}
+AbstractTile::AbstractTile():
+    borders(NULL),
+    inner(NULL)
+{ }
 
 AbstractTile::~AbstractTile()
 {
-    for (size_t i = 0; i < SIDE_COUNT; ++i)
-        delete borders[i];
+    delete[] borders;
     delete inner;
 }
 
@@ -67,24 +64,31 @@ CoordRect AbstractTile::getInnerRect() const
 
 Borders AbstractTile::getBorders()
 {
+    if (borders)
+        return borders;
+    borders = new Border[SIDE_COUNT];
     for (size_t i = 0; i < SIDE_COUNT; ++i)
-        getBorder(static_cast<Side>(i));
+        borders[i] = TileView(*this, getBorderRect(static_cast<Side>(i)));
     return borders;
 }
 
 Border AbstractTile::getBorder(Side s)
 {
-    return borders[s] ? borders[s] : borders[s] = makeSlice(getBorderRect(s));
+    if (!borders)
+        getBorders();
+    return borders[s];
 }
 
-TileView* AbstractTile::getInner()
+TileView AbstractTile::getInner()
 {
-    return inner ? inner : inner = makeSlice(getInnerRect());
+    if (!inner)
+        inner = new TileView(*this, getInnerRect());
+    return *inner;
 }
 
-TileView* AbstractTile::makeSlice(const CoordRect& r)
+TileView AbstractTile::makeSlice(const CoordRect& r)
 {
-    return new TileView(this, r);
+    return TileView(*this, r);
 }
 
 void AbstractTile::output(std::ostream& out) const
@@ -99,18 +103,18 @@ void AbstractTile::output(std::ostream& out) const
 TileView::TileView()
 {}
 
-TileView::TileView(AbstractTile* viewed):
-    viewed(viewed),
+TileView::TileView(AbstractTile& viewed):
+    viewed(&viewed),
     window(0, 0, -10, -10)
 {}
 
-TileView::TileView(TileView* that):
-    viewed(that->viewed),
-    window(that->window)
+TileView::TileView(const TileView& that):
+    viewed(that.viewed),
+    window(that.window)
 {}
 
-TileView::TileView(AbstractTile* viewed, const CoordRect& r):
-    viewed(viewed),
+TileView::TileView(AbstractTile& viewed, const CoordRect& r):
+    viewed(&viewed),
     window(r)
 {}
 
@@ -137,13 +141,13 @@ bool TileView::at(coord_t r, coord_t c) const
 void TileView::set(coord_t r, coord_t c, bool v)
 { return viewed->set(window.r1 + r, window.c1 + c, v); }
 
-TileView* TileView::makeSlice(const CoordRect& reg)
+TileView TileView::makeSlice(const CoordRect& reg)
 {
-    return new TileView(viewed, reg.shifted(window.r1, window.c1));
+    return TileView(*viewed, reg.shifted(window.r1, window.c1));
 }
 
 
-TorusView::TorusView(AbstractTile* viewed):
+TorusView::TorusView(AbstractTile& viewed):
     TileView(viewed)
 {}
 
@@ -208,7 +212,7 @@ void Matrix::operator=(const Matrix& m)
 }
 
 Matrix m(2, 2);
-TileView t(&m);
+TileView t(m);
 
 } // namespace game_of_life
 

@@ -9,7 +9,7 @@ namespace game_of_life
 class Worker
 {
 public:
-    static void makeIteration(const AbstractTile* prev, AbstractTile* next);
+    static void makeIteration(const AbstractTile& prev, AbstractTile& next);
 };
 
 }

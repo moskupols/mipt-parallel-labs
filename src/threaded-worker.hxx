@@ -40,11 +40,11 @@ class ThreadedWorker : public Thread, protected Worker
 {
 public:
     void start(
-            ThreadedManagerShared* manager,
-            AbstractTile* domain,
+            ThreadedManagerShared& manager,
+            AbstractTile& domain,
             const std::vector<ThreadedWorkerShared*>& neighShared);
 
-    ThreadedWorkerShared* getShared();
+    ThreadedWorkerShared& getShared();
 
 protected:
     void run();
@@ -53,8 +53,8 @@ private:
     ThreadedWorkerShared myShared;
 
     ThreadedManagerShared* manager;
-    std::vector<ThreadedWorkerShared*> neighShared;
     AbstractTile* domain;
+    std::vector<ThreadedWorkerShared*> neighShared;
 };
 
 } // namespace game_of_life

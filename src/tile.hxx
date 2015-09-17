@@ -33,7 +33,7 @@ struct CoordRect
 
 class TileView;
 
-typedef TileView* Border;
+typedef TileView Border;
 typedef Border* Borders;
 
 enum Side
@@ -71,15 +71,15 @@ public:
     CoordRect getBorderRect(Side s) const;
     CoordRect getInnerRect() const;
 
-    Borders getBorders();
+    Border* getBorders();
     Border getBorder(Side s);
-    TileView* getInner();
+    TileView getInner();
 
-    virtual TileView* makeSlice(const CoordRect& r);
+    virtual TileView makeSlice(const CoordRect& r);
 
     virtual void output(std::ostream& out) const;
 private:
-    Border borders[SIDE_COUNT];
+    Border* borders;
     TileView* inner;
 };
 
@@ -88,9 +88,9 @@ class TileView : public AbstractTile
 {
 public:
     TileView();
-    explicit TileView(AbstractTile* viewed);
-    explicit TileView(TileView* viewed);
-    TileView(AbstractTile* viewed, const CoordRect& r);
+    explicit TileView(AbstractTile& viewed);
+    TileView(const TileView& viewed);
+    TileView(AbstractTile& viewed, const CoordRect& r);
 
     TileView& operator = (const TileView& that);
 
@@ -100,7 +100,7 @@ public:
     bool at(coord_t r, coord_t c) const;
     void set(coord_t r, coord_t c, bool v);
 
-    TileView* makeSlice(const CoordRect& reg);
+    TileView makeSlice(const CoordRect& reg);
 
 private:
     AbstractTile* viewed;
@@ -111,7 +111,7 @@ private:
 class TorusView : public TileView
 {
 public:
-    explicit TorusView(AbstractTile* viewed);
+    explicit TorusView(AbstractTile& viewed);
 
     bool at(coord_t r, coord_t c) const;
     void set(coord_t r, coord_t c, bool v);

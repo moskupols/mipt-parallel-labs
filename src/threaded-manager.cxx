@@ -39,16 +39,16 @@ ThreadedManager::~ThreadedManager()
     assert(getState() == NOT_STARTED || getState() == FINISHED);
 }
 
-void ThreadedManager::start(Matrix* t, int concurrency)
+void ThreadedManager::start(Matrix& t, int concurrency)
 {
-    this->matrix = t;
+    this->matrix = &t;
     this->concurrency = concurrency;
 
     Manager::start();
 }
 
-ThreadedManagerShared* ThreadedManager::getShared()
-{ return &myShared; }
+ThreadedManagerShared& ThreadedManager::getShared()
+{ return myShared; }
 
 void ThreadedManager::pauseAll()
 {
@@ -75,20 +75,20 @@ void ThreadedManager::run()
     UniqueArray<ThreadedWorker> workers(concurrency);
     UniqueArray<TileView> domains(concurrency);
 
-    TorusView torus(matrix);
+    TorusView torus(*matrix);
 
-    std::vector<CoordRect> domainRects = chooseDomains(&torus, concurrency);
+    std::vector<CoordRect> domainRects = chooseDomains(torus, concurrency);
     for (int i = 0; i < concurrency; ++i)
-        domains[i] = TileView(&torus, domainRects[i]);
+        domains[i] = TileView(torus, domainRects[i]);
 
-    std::vector<std::vector<int> > neigs = makeNeighbors(&torus, domainRects);
+    std::vector<std::vector<int> > neigs = makeNeighbors(torus, domainRects);
 
     for (int i = 0; i < concurrency; ++i)
     {
         std::vector<ThreadedWorkerShared*> shareds(neigs[i].size());
         for (size_t j = 0; j < neigs[i].size(); ++j)
-            shareds[j] = workers[neigs[i][j]].getShared();
-        workers[i].start(&myShared, &domains[i], shareds);
+            shareds[j] = &workers[neigs[i][j]].getShared();
+        workers[i].start(myShared, domains[i], shareds);
     }
 
     int stop = 0;
@@ -120,12 +120,12 @@ void ThreadedManager::run()
             for (int i = 0; i < concurrency; ++i)
             {
                 int newStop = std::min(stop,
-                        workers[i].getShared()->getIterationPublished() + 1);
+                        workers[i].getShared().getIterationPublished() + 1);
                 if (newStop > myShared.stop)
                     myShared.setStop(newStop);
             }
             for (int i = 0; i < concurrency; ++i)
-                workers[i].getShared()->wakeWhenPublishes(myShared.stop);
+                workers[i].getShared().wakeWhenPublishes(myShared.stop);
             stop = myShared.stop;
             setState(STOPPED);
         }

@@ -35,12 +35,12 @@ void chooseDomains(RAIt begin, RAIt end,
     }
 }
 
-bool near(coord_t r, coord_t c, const CoordRect& rect, TorusView* t)
+bool near(coord_t r, coord_t c, const CoordRect& rect, const TorusView& t)
 {
     for (size_t i = 0; i < DIRECTION_COUNT; ++i)
         if (rect.contains(
-                    t->normalizeRow(r + DIRECTION[i][0]),
-                    t->normalizeColumn(c + DIRECTION[i][1])))
+                    t.normalizeRow(r + DIRECTION[i][0]),
+                    t.normalizeColumn(c + DIRECTION[i][1])))
             return true;
     return false;
 }
@@ -50,13 +50,12 @@ bool near(coord_t r, coord_t c, const CoordRect& rect, TorusView* t)
 namespace game_of_life
 {
 
-vector<CoordRect> Manager::chooseDomains(
-        AbstractTile* t, int parts)
+vector<CoordRect> Manager::chooseDomains(const AbstractTile& t, int parts)
 {
     vector<CoordRect> ret(parts);
 
-    coord_t h = t->getHeight();
-    coord_t w = t->getWidth();
+    coord_t h = t.getHeight();
+    coord_t w = t.getWidth();
 
     if (parts > h * w)
         parts = h * w;
@@ -66,7 +65,7 @@ vector<CoordRect> Manager::chooseDomains(
 }
 
 vector<vector<int> > Manager::makeNeighbors(
-        TorusView* t, const vector<CoordRect>& r)
+        const TorusView& t, const vector<CoordRect>& r)
 {
     vector<vector<int> > ret(r.size());
     set<pair<int, int> > pairs;
