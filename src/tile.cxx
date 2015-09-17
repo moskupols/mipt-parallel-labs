@@ -174,7 +174,9 @@ Matrix::Matrix(size_t height, size_t width):
     height(height),
     width(width),
     data(new bool[height * width])
-{}
+{
+    memset(data, 0, height * width * sizeof(bool));
+}
 
 Matrix::Matrix(const AbstractTile& t):
     height(t.getHeight()),
