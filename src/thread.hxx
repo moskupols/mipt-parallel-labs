@@ -17,6 +17,8 @@ public:
 
     bool isCurrent() const;
 
+    static pthread_t getCurrentId();
+
 protected:
     Thread();
 
@@ -56,8 +58,12 @@ public:
     MutexLocker(MutexLocker&& temp);
     ~MutexLocker();
 
+protected:
+    bool isValid() const;
+
 private:
     Mutex* m;
+    bool valid;
 };
 
 class Cond
@@ -92,7 +98,7 @@ private:
 };
 
 template<class R>
-class ResourceLocker : MutexLocker
+class ResourceLocker : public MutexLocker
 {
 public:
     ResourceLocker(ResourceMutex<R>& r):

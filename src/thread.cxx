@@ -1,6 +1,10 @@
 #include "thread.hxx"
 #include "output.hxx"
 
+#include <map>
+
+using namespace std;
+
 Thread::~Thread()
 {
     assert(!isRunning());
@@ -29,6 +33,20 @@ bool Thread::isCurrent() const
     return pthread_self() == descriptor;
 }
 
+pthread_t Thread::getCurrentId()
+{
+    static map<pthread_t, int> ids;
+    pthread_t p = pthread_self();
+    auto it = ids.find(p);
+    if (it == ids.end())
+    {
+        int ret = ids.size();
+        ids[p] = ret;
+        return ret;
+    }
+    return it->second;
+}
+
 Thread::Thread():
     running(false)
 {}
@@ -42,7 +60,9 @@ void* Thread::threadRunner(void* me)
 void Thread::wrappedRun()
 {
     running = true;
+    debug() << "STARTING (pthreads id " << descriptor << ")";
     run();
+    debug() << "STOPPING (pthreads id " << descriptor << ")";
     running = false;
 }
 
@@ -71,23 +91,29 @@ void Mutex::unlock()
 
 
 MutexLocker::MutexLocker(Mutex& m):
-    m(&m)
+    m(&m),
+    valid(true)
 {
     m.lock();
 }
 
 MutexLocker::MutexLocker(MutexLocker&& temp):
-    m(temp.m)
+    m(temp.m),
+    valid(temp.valid)
 {
-    temp.m = NULL;
+    temp.valid = false;
 }
 
 MutexLocker::~MutexLocker()
 {
-    if (m)
+    if (isValid())
         m->unlock();
 }
 
+bool MutexLocker::isValid() const
+{
+    return valid;
+}
 
 
 Cond::Cond()

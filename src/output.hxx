@@ -10,17 +10,9 @@ typedef ResourceMutex<std::ostream> OstreamMutex;
 class OstreamLocker : public ResourceLocker<std::ostream>
 {
 public:
-    OstreamLocker(OstreamMutex& m):
-        ResourceLocker<std::ostream>(m)
-    {}
-    OstreamLocker(OstreamLocker&& temp):
-        ResourceLocker<std::ostream>(std::move(temp))
-    {}
-
-    ~OstreamLocker()
-    {
-        get().flush();
-    }
+    OstreamLocker(OstreamMutex& m);
+    OstreamLocker(OstreamLocker&& temp);
+    ~OstreamLocker();
 
     template<class T>
     OstreamLocker& operator << (const T& some)
@@ -33,17 +25,9 @@ public:
 class DebugStreamLocker : public OstreamLocker
 {
 public:
-    DebugStreamLocker(OstreamMutex& m):
-        OstreamLocker(m)
-    {}
-    DebugStreamLocker(DebugStreamLocker&& temp):
-        OstreamLocker(std::move(temp))
-    {}
-
-    ~DebugStreamLocker()
-    {
-        get() << "\n";
-    }
+    DebugStreamLocker(OstreamMutex& m);
+    DebugStreamLocker(DebugStreamLocker&& temp);
+    ~DebugStreamLocker();
 };
 
 extern OstreamMutex coutMutex;
@@ -52,7 +36,7 @@ extern OstreamMutex debugMutex;
 
 OstreamLocker out();
 OstreamLocker err();
-OstreamLocker debug();
+DebugStreamLocker debug();
 
 void out(const std::string&);
 void err(const std::string&);

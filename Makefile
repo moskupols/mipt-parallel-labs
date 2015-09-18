@@ -1,7 +1,11 @@
 CXX := g++-4.4
+# CXX := g++
+
 CPP_FLAGS := -DDEBUG_OUTPUT='"debug.log"'
+
 CXX_FLAGS := -std=c++0x -Wall -Wextra -fstack-protector -ggdb
-# CXX_FLAGS := -std=c++0x -Wall -Wextra -fstack-protector -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=address,undefined -ggdb
+# CXX_FLAGS += -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=address,undefined
+
 LD_FLAGS := $(CXX_FLAGS) -pthread
 
 SOURCES = $(wildcard src/*.cxx)
