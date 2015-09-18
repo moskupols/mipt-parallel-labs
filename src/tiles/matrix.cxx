@@ -73,7 +73,7 @@ Matrix Matrix::fromCsv(std::istream& in)
         for (; getline(iss, s, ';'); ++i)
         {
             if (s == "1" || s == "#")
-                alive.push_back(make_pair(h-1, i));
+                alive.push_back(make_pair(h, i));
             else if (s != "0" && s != ".")
                 throw InputError("CSV incorrect");
         }
