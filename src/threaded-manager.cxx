@@ -11,16 +11,53 @@
 namespace game_of_life
 {
 
+ThreadedManagerShared::ThreadedManagerShared(ThreadedManager& manager):
+    workersWaiting(0),
+    stop(0),
+    manager(manager)
+{}
+
 bool ThreadedManagerShared::wakeWhenNextIterationNeeded(int have)
 {
     MutexLocker locker(stopMutex);
-    while (stop != -1 && stop <= have)
-        stopCond.wait(stopMutex);
+    if (stop != -1 && stop <= have)
+    {
+        incWorkersWaiting();
+        while (stop != -1 && stop <= have)
+            stopCond.wait(stopMutex);
+        decWorkersWaiting();
+    }
     return stop != -1;
 }
 
 int ThreadedManagerShared::getStop() const
 { return stop; }
+
+int ThreadedManagerShared::getWorkersWaiting() const
+{
+    return workersWaiting;
+}
+
+void ThreadedManagerShared::incWorkersWaiting()
+{
+    MutexLocker locker(workersMutex);
+    ++workersWaiting;
+    debug() << workersWaiting << "/" << workersCount << " workers waiting";
+    if (workersWaiting == workersCount)
+        manager.updateState();
+}
+
+void ThreadedManagerShared::decWorkersWaiting()
+{
+    MutexLocker locker(workersMutex);
+    --workersWaiting;
+    debug() << workersWaiting << "/" << workersCount << " workers waiting";
+}
+
+void ThreadedManagerShared::setWorkersCount(int count)
+{
+    workersCount = count;
+}
 
 void ThreadedManagerShared::setStop(int newStop)
 {
@@ -31,9 +68,11 @@ void ThreadedManagerShared::setStop(int newStop)
 }
 
 ThreadedManager::ThreadedManager():
+    myShared(*this),
     pauseFlag(false),
     runMore(0),
-    shutdownFlag(false)
+    shutdownFlag(false),
+    updateFlag(false)
 {}
 
 ThreadedManager::~ThreadedManager()
@@ -74,9 +113,17 @@ void ThreadedManager::shutdown()
     cond.wakeOne();
 }
 
+void ThreadedManager::updateState()
+{
+    MutexLocker locker(mutex);
+    updateFlag = true;
+    cond.wakeOne();
+}
+
 void ThreadedManager::run()
 {
     setState(RUNNING);
+    getShared().setWorkersCount(concurrency);
 
     UniqueArray<ThreadedWorker> workers(concurrency);
     UniqueArray<TileView> domains(concurrency);
@@ -103,11 +150,13 @@ void ThreadedManager::run()
     {
         int runMore = 0;
         bool pauseFlag = false;
+        bool updateFlag = false;
         {
             MutexLocker locker(mutex);
             while (!this->pauseFlag
                     && !this->runMore
-                    && !this->shutdownFlag)
+                    && !this->shutdownFlag
+                    && !this->updateFlag)
                 cond.wait(mutex);
 
             if (this->shutdownFlag)
@@ -115,9 +164,13 @@ void ThreadedManager::run()
             else if (this->pauseFlag)
                 pauseFlag = true;
             else
+            {
                 runMore = this->runMore;
+                updateFlag = this->updateFlag;
+            }
             this->pauseFlag = false;
             this->runMore = 0;
+            this->updateFlag = false;
         }
 
         if (pauseFlag)
@@ -141,6 +194,13 @@ void ThreadedManager::run()
             stop += runMore;
             myShared.setStop(stop);
             setState(RUNNING);
+        }
+
+        if (updateFlag)
+        {
+            if (getState() == RUNNING
+                    && getShared().getWorkersWaiting() == concurrency)
+                setState(STOPPED);
         }
     }
     myShared.setStop(-1);

@@ -14,17 +14,34 @@ class Matrix;
 class ThreadedManagerShared
 {
 public:
+    ThreadedManagerShared(ThreadedManager& manager);
+
     bool wakeWhenNextIterationNeeded(int iterationPublished);
 
     int getStop() const;
 
-private:
+protected:
     friend class ThreadedManager;
 
+    int getWorkersWaiting() const;
+
+    void incWorkersWaiting();
+    void decWorkersWaiting();
+
+    void setWorkersCount(int count);
+
     void setStop(int newStop);
+
+private:
+    int workersCount;
+    int workersWaiting;
+    Mutex workersMutex;
+
     int stop;
     Mutex stopMutex;
     Cond stopCond;
+
+    ThreadedManager& manager;
 };
 
 class ThreadedManager : public Manager
@@ -41,6 +58,8 @@ public:
     void runForMore(int iterations);
     void shutdown();
 
+    void updateState();
+
 protected:
     void run();
 
@@ -53,6 +72,7 @@ private:
     bool pauseFlag;
     int runMore;
     bool shutdownFlag;
+    bool updateFlag;
 
     Mutex mutex;
     Cond cond;
