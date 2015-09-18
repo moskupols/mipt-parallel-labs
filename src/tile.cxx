@@ -2,6 +2,9 @@
 
 #include <cstring>
 #include <iostream>
+#include <stdexcept>
+
+using namespace std;
 
 namespace game_of_life
 {
@@ -55,6 +58,7 @@ CoordRect AbstractTile::getBorderRect(Side s) const
     case SIDE_E: return CoordRect(1,   w-1, h-1, w);
     case SIDE_S: return CoordRect(h-1, 0,   h,   w);
     }
+    throw logic_error("unusual side");
 }
 
 CoordRect AbstractTile::getInnerRect() const
