@@ -18,13 +18,13 @@ OstreamMutex debugMutex(dout);
 
 OstreamLocker out() { return OstreamLocker(coutMutex); }
 OstreamLocker err() { return OstreamLocker(cerrMutex); }
-OstreamLocker debug() { return OstreamLocker(debugMutex); }
+OstreamLocker debug() { return DebugStreamLocker(debugMutex); }
 
 void out(const string& s) { out() << s; }
 void err(const string& s) { err() << s; }
 
 #ifdef DEBUG_OUTPUT
-void debug(const string& s) { debug() << s << "\n"; }
+void debug(const string& s) { debug() << s; }
 #else
 void debug(const string&) {}
 #endif

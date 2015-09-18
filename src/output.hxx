@@ -23,10 +23,26 @@ public:
     }
 
     template<class T>
-    OstreamLocker& operator << (T some)
+    OstreamLocker& operator << (const T& some)
     {
         get() << some;
         return *this;
+    }
+};
+
+class DebugStreamLocker : public OstreamLocker
+{
+public:
+    DebugStreamLocker(OstreamMutex& m):
+        OstreamLocker(m)
+    {}
+    DebugStreamLocker(DebugStreamLocker&& temp):
+        OstreamLocker(std::move(temp))
+    {}
+
+    ~DebugStreamLocker()
+    {
+        get() << "\n";
     }
 };
 
