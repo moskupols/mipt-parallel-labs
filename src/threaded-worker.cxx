@@ -40,13 +40,13 @@ void ThreadedWorkerShared::wakeWhenPublishes(int needed)
 
 void ThreadedWorkerShared::incIterationCalced()
 {
-    debug() << "worker finished calcing iteration" << getIterationCalced() + 1;
+    // debug() << "worker finished calcing iteration" << getIterationCalced() + 1;
     incAndWakeAll(iterationCalced, calcedMutex, calcedCond);
 }
 
 void ThreadedWorkerShared::incIterationPublished()
 {
-    debug() << "worker publishing iteration " << getIterationPublished() + 1;
+    // debug() << "worker publishing iteration " << getIterationPublished() + 1;
     incAndWakeAll(iterationPublished, publishMutex, publishCond);
 }
 
@@ -90,7 +90,7 @@ void ThreadedWorker::run()
         for (size_t i = 0; i < nsz; ++i)
             neighShared[i]->wakeWhenPublishes(myShared.iterationPublished);
 
-        for (size_t i = 0; i < nsz; ++i)
+        for (size_t i = 0; i < SIDE_COUNT; ++i)
             makeIteration(resultBorders[i], tempBorders[i]);
 
         myShared.incIterationCalced();

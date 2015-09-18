@@ -104,11 +104,9 @@ void status(Params p)
     Manager::State state = manager.getState();
 
     OstreamLocker o(out());
-    o << "Status is " << state << "\n";
-    if (state == Manager::NOT_STARTED)
-        return;
-
-    matrix.output(o.get());
+    o << "System state: " << manager.stateStr(state) << "\n";
+    if (state != Manager::NOT_STARTED && state != Manager::RUNNING)
+        matrix.output(o.get());
 }
 
 void run(Params p)
@@ -163,7 +161,7 @@ void quit(Params p)
         manager.join();
         debug(TAG + "joined the manager");
     }
-    debug(TAG + "exiting the program gracefully");
+    debug(TAG + "exiting the program gracefully ----------");
     exit(0);
 }
 
