@@ -8,7 +8,7 @@ CXX_FLAGS := -std=c++0x -Wall -Wextra -fstack-protector -ggdb
 
 LD_FLAGS := $(CXX_FLAGS) -pthread
 
-SOURCES = $(wildcard src/*.cxx)
+SOURCES = $(wildcard src/*.cxx) $(wildcard src/tiles/*.cxx)
 OBJECTS = $(patsubst src/%.cxx,build/%.o,$(SOURCES))
 
 TARGET := ./main

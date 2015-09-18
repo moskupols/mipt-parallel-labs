@@ -1,6 +1,8 @@
 #ifndef THREADED_WORKER_HXX_INCLUDED
 #define THREADED_WORKER_HXX_INCLUDED
 
+#include <vector>
+
 #include "thread.hxx"
 #include "tile.hxx"
 #include "worker.hxx"
