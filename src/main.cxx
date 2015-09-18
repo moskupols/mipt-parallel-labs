@@ -17,6 +17,7 @@ using namespace game_of_life;
 using std::vector;
 using std::string;
 
+using std::exception;
 using std::domain_error;
 
 using std::map;
@@ -78,15 +79,26 @@ void start(Params p)
     try
     {
         concurrency = toInt(p[0]);
+        if (concurrency <= 0)
+            throw IncorrectCommandException(TAG + "incorrect concurrency");
         if (p.size() == 3)
         {
             int h = toInt(p[1]), w = toInt(p[2]);
+            if (h <= 0 || w <= 0)
+                throw IncorrectCommandException(TAG + "incorrect matrix size");
             matrix = Matrix::random(h, w, 42);
         }
         else
         {
-            ifstream csv(p[1]);
-            matrix = Matrix::fromCsv(csv);
+            try
+            {
+                ifstream csv(p[1].data());
+                matrix = Matrix::fromCsv(csv);
+            }
+            catch (exception& e)
+            {
+                throw IncorrectCommandException(TAG + e.what());
+            }
         }
     }
     catch (domain_error& e)
@@ -107,7 +119,10 @@ void status(Params p)
     OstreamLocker o(out());
     o << "System state: " << manager.stateStr(state) << "\n";
     if (state != Manager::NOT_STARTED && state != Manager::RUNNING)
+    {
+        o << "After iteration " << manager.getShared().getStop() << ":\n";
         matrix.output(o.get());
+    }
 }
 
 void run(Params p)
@@ -143,6 +158,7 @@ void stop(Params p)
         manager.pauseAll();
         manager.wakeWhenStateIs(Manager::STOPPED);
         debug(TAG + "awake and stopped");
+        out() << "Stopped at " << manager.getShared().getStop() << "\n";
         break;
     default:
         throw IncorrectCommandException(TAG + "not running");
