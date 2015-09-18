@@ -23,7 +23,7 @@ void Worker::makeIteration(const AbstractTile& prev, AbstractTile& next)
         for (coord_t c = 0; c < w; ++c)
         {
             int neigh = countNeighborsAlive(prev, r, c);
-            next.set(r, c, neigh == 3 || neigh == 4);
+            next.set(r, c, neigh == 2 || neigh == 3);
         }
 }
 

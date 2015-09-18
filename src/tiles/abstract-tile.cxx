@@ -84,7 +84,11 @@ void AbstractTile::output(std::ostream& out) const
     out << getHeight() << " x " << getWidth() << std::endl;
     for (size_t i = 0; i < getHeight(); ++i)
         for (size_t j = 0; j < getWidth(); ++j)
-            out << ".#"[at(i, j)] << " \n"[j+1 == getWidth()];
+        {
+            out << ".#"[at(i, j)];
+            if (j + 1 == getWidth())
+                out << '\n';
+        }
 }
 
 }
