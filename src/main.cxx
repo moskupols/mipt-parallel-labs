@@ -81,6 +81,7 @@ void start(Params p)
             matrix = Matrix(h, w);
             matrix.set(0, 0, true);
             matrix.set(1, 1, true);
+            matrix.set(0, 1, true);
         // }
         // else
         // {

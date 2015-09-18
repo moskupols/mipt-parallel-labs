@@ -64,12 +64,14 @@ void ThreadedManager::runForMore(int iterations)
     MutexLocker locker(mutex);
     pauseFlag = false;
     runMore += iterations;
+    cond.wakeOne();
 }
 
 void ThreadedManager::shutdown()
 {
     MutexLocker locker(mutex);
     shutdownFlag = true;
+    cond.wakeOne();
 }
 
 void ThreadedManager::run()
@@ -147,7 +149,7 @@ void ThreadedManager::run()
     {
         int id = workers[i].getId();
         workers[i].join();
-        debug() << "manager joined worker thread" << id;
+        debug() << "manager joined worker thread " << id;
     }
 
     setState(FINISHED);
