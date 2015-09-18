@@ -33,10 +33,19 @@ bool Thread::isCurrent() const
     return pthread_self() == descriptor;
 }
 
-pthread_t Thread::getCurrentId()
+int Thread::getId() const
+{
+    return getIdFor(descriptor);
+}
+
+int Thread::getCurrentId()
+{
+    return getIdFor(pthread_self());
+}
+
+int Thread::getIdFor(pthread_t p)
 {
     static map<pthread_t, int> ids;
-    pthread_t p = pthread_self();
     auto it = ids.find(p);
     if (it == ids.end())
     {

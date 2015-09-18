@@ -12,7 +12,7 @@ class CoordRect;
 class AbstractTile;
 class TorusView;
 
-class Manager : protected Thread
+class Manager : public Thread
 {
 public:
     static std::vector<CoordRect> chooseDomains(const AbstractTile& t, int parts);
@@ -31,6 +31,8 @@ public:
     Manager();
 
     State getState() const;
+    std::string getStateStr() const;
+    static std::string stateStr(State s);
 
     void wakeWhenStateIs(State s) const;
     void wakeWhenStateIsNot(State s) const;

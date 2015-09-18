@@ -1,5 +1,6 @@
 #include "threaded-worker.hxx"
 #include "threaded-manager.hxx"
+#include "output.hxx"
 
 namespace game_of_life
 {
@@ -38,10 +39,16 @@ void ThreadedWorkerShared::wakeWhenPublishes(int needed)
 { wakeWhenReaches(iterationPublished, needed, publishMutex, publishCond); }
 
 void ThreadedWorkerShared::incIterationCalced()
-{ incAndWakeAll(iterationCalced, calcedMutex, calcedCond); }
+{
+    debug() << "worker finished calcing iteration" << getIterationCalced() + 1;
+    incAndWakeAll(iterationCalced, calcedMutex, calcedCond);
+}
 
 void ThreadedWorkerShared::incIterationPublished()
-{ incAndWakeAll(iterationPublished, publishMutex, publishCond); }
+{
+    debug() << "worker publishing iteration " << getIterationPublished() + 1;
+    incAndWakeAll(iterationPublished, publishMutex, publishCond);
+}
 
 
 
@@ -61,6 +68,8 @@ ThreadedWorkerShared& ThreadedWorker::getShared() { return myShared; }
 
 void ThreadedWorker::run()
 {
+    debug("worker started");
+
     coord_t h = domain->getHeight();
     coord_t w = domain->getWidth();
 
@@ -73,6 +82,7 @@ void ThreadedWorker::run()
 
     size_t nsz = neighShared.size();
 
+    debug("worker ready to calc");
     while (manager->wakeWhenNextIterationNeeded(myShared.iterationPublished))
     {
         makeIteration(innerResult, innerTemp);
@@ -90,6 +100,8 @@ void ThreadedWorker::run()
         domain->copyValues(tempDomain);
         myShared.incIterationPublished();
     }
+
+    debug("worker stopped");
 }
 
 

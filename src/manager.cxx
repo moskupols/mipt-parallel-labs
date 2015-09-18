@@ -1,5 +1,6 @@
 #include "manager.hxx"
 #include "tile.hxx"
+#include "output.hxx"
 
 #include <set>
 
@@ -98,6 +99,27 @@ Manager::State Manager::getState() const
     return s;
 }
 
+string Manager::getStateStr() const
+{
+    return stateStr(getState());
+}
+
+string Manager::stateStr(State s)
+{
+    switch (s)
+    {
+#define HANDLE(c) case c: return #c;
+        HANDLE(NOT_STARTED)
+        HANDLE(RUNNING)
+        HANDLE(STOPPING)
+        HANDLE(STOPPED)
+        HANDLE(FINISHED)
+#undef HANDLE
+    default:
+        assert(false);
+    }
+}
+
 void Manager::wakeWhenStateIsNot(State s) const
 {
     MutexLocker locker(stateMutex);
@@ -117,15 +139,14 @@ void Manager::setState(State s)
     if (this->s == s)
         return;
     MutexLocker locker(stateMutex);
+    debug() << "manager: new state: " << stateStr(s);
     this->s = s;
     stateCond.wakeAll();
 }
 
 void Manager::start()
 {
-    setState(RUNNING);
     Thread::start();
-    setState(FINISHED);
 }
 
 } // namespace game_of_life

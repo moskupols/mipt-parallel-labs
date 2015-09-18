@@ -1,7 +1,7 @@
 CXX := g++-4.4
 # CXX := g++
 
-CPP_FLAGS := -DDEBUG_OUTPUT='"debug.log"'
+DEBUG_OUTPUT := '"debug.log"'
 
 CXX_FLAGS := -std=c++0x -Wall -Wextra -fstack-protector -ggdb
 # CXX_FLAGS += -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=address,undefined
@@ -21,6 +21,9 @@ run: $(TARGET)
 $(TARGET): $(OBJECTS)
 	$(CXX) $^ $(LD_FLAGS) -o $@
 
+build/output.o: src/output.cxx
+	$(CXX) -c $< -DDEBUG_OUTPUT=$(DEBUG_OUTPUT) $(CXX_FLAGS) -o $@
+
 build/%.o: src/%.cxx
-	$(CXX) -c $< $(CPP_FLAGS) $(CXX_FLAGS) -o $@
+	$(CXX) -c $< $(CXX_FLAGS) -o $@
 

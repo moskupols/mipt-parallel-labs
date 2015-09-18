@@ -17,7 +17,8 @@ public:
 
     bool isCurrent() const;
 
-    static pthread_t getCurrentId();
+    int getId() const;
+    static int getCurrentId();
 
 protected:
     Thread();
@@ -28,6 +29,8 @@ protected:
     virtual void run() = 0;
 
 private:
+    static int getIdFor(pthread_t d);
+
     static void* threadRunner(void* me);
 
     void wrappedRun();

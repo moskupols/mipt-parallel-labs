@@ -6,6 +6,7 @@
 #include "tile.hxx"
 
 #include "utils.hxx"
+#include "output.hxx"
 
 namespace game_of_life
 {
@@ -24,6 +25,7 @@ int ThreadedManagerShared::getStop() const
 void ThreadedManagerShared::setStop(int newStop)
 {
     MutexLocker locker(stopMutex);
+    debug() << "setting iteration stopper to " << newStop;
     stop = newStop;
     stopCond.wakeAll();
 }
@@ -72,6 +74,8 @@ void ThreadedManager::shutdown()
 
 void ThreadedManager::run()
 {
+    setState(RUNNING);
+
     UniqueArray<ThreadedWorker> workers(concurrency);
     UniqueArray<TileView> domains(concurrency);
 
@@ -140,7 +144,13 @@ void ThreadedManager::run()
     myShared.setStop(-1);
 
     for (int i = 0; i < concurrency; ++i)
+    {
+        int id = workers[i].getId();
         workers[i].join();
+        debug() << "manager joined worker thread" << id;
+    }
+
+    setState(FINISHED);
 }
 
 } // namespace game_of_life

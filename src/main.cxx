@@ -71,9 +71,10 @@ void start(Params p)
         throw IncorrectCommandException(TAG + "already started");
     checkParamCount(TAG, p, 2, 3);
 
+    int concurrency;
     try
     {
-        int concurrency = toInt(p[0]);
+        concurrency = toInt(p[0]);
         // if (p.size() == 3)
         // {
             int h = toInt(p[1]), w = toInt(p[2]);
@@ -85,12 +86,13 @@ void start(Params p)
         // {
 
         // }
-        manager.start(matrix, concurrency);
     }
     catch (domain_error& e)
     {
         throw IncorrectCommandException(TAG + e.what());
     }
+    debug(TAG + "starting the manager");
+    manager.start(matrix, concurrency);
 }
 
 void status(Params p)
@@ -157,9 +159,10 @@ void quit(Params p)
     {
         debug(TAG + "manager has started, trying to shut him");
         manager.shutdown();
-        manager.wakeWhenStateIs(Manager::FINISHED);
-        debug(TAG + "awake and shut");
+        manager.join();
+        debug(TAG + "joined the manager");
     }
+    debug(TAG + "exiting the program gracefully");
     exit(0);
 }
 
@@ -202,7 +205,7 @@ int main()
         }
         catch (IncorrectCommandException& e)
         {
-            out() << e.what() << "\n";
+            err() << e.what() << "\n";
         }
     }
     out("quit\n");
