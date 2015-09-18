@@ -20,7 +20,6 @@ using std::domain_error;
 using std::map;
 
 using std::cin;
-using std::endl;
 using std::istringstream;
 
 vector<string> split(const string& s)
@@ -101,12 +100,12 @@ void status(Params p)
 
     Manager::State state = manager.getState();
 
-    OstreamLocker lock(coutMutex);
-    lock.get() << "Status is " << state << endl;
+    OstreamLocker o(out());
+    o << "Status is " << state << "\n";
     if (state == Manager::NOT_STARTED)
         return;
 
-    matrix.output(lock.get());
+    matrix.output(o.get());
 }
 
 void run(Params p)
@@ -122,7 +121,7 @@ void run(Params p)
                 TAG + "task unknown, use START to initialize.");
     case Manager::STOPPED:
         runs = toInt(p[0]);
-        debugLn(TAG + "trying to add " + p[0] + "iterations");
+        debug(TAG + "trying to add " + p[0] + " iterations");
         manager.runForMore(runs);
         break;
     default:
@@ -138,10 +137,10 @@ void stop(Params p)
     switch (manager.getState())
     {
     case Manager::RUNNING:
-        debugLn(TAG + "stopping");
+        debug(TAG + "stopping");
         manager.pauseAll();
         manager.wakeWhenStateIs(Manager::STOPPED);
-        debugLn(TAG + "awake and stopped");
+        debug(TAG + "awake and stopped");
         break;
     default:
         throw IncorrectCommandException(TAG + "not running");
@@ -153,13 +152,13 @@ void quit(Params p)
     static const string TAG("QUIT: ");
     checkParamCount(TAG, p, 0, 0);
 
-    debugLn(TAG);
+    debug(TAG);
     if (manager.getState() != Manager::NOT_STARTED)
     {
-        debugLn(TAG + "manager has started, trying to shut him");
+        debug(TAG + "manager has started, trying to shut him");
         manager.shutdown();
         manager.wakeWhenStateIs(Manager::FINISHED);
-        debugLn(TAG + "awake and shut");
+        debug(TAG + "awake and shut");
     }
     exit(0);
 }
@@ -179,7 +178,7 @@ int main()
     cmdMap["QUIT"] = quit;
 
     string line;
-    debugLn("---------------- RESTART ----------------------");
+    debug("---------------- RESTART ----------------------");
     while (out("game-of-life: "), getline(cin, line))
     {
         vector<string> words = split(line);
@@ -203,10 +202,10 @@ int main()
         }
         catch (IncorrectCommandException& e)
         {
-            outLn(e.what());
+            out() << e.what() << "\n";
         }
     }
-    outLn("quit");
+    out("quit\n");
     quit(vector<string>());
 }
 

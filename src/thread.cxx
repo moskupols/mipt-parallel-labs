@@ -1,4 +1,5 @@
 #include "thread.hxx"
+#include "output.hxx"
 
 Thread::~Thread()
 {
@@ -70,14 +71,21 @@ void Mutex::unlock()
 
 
 MutexLocker::MutexLocker(Mutex& m):
-    m(m)
+    m(&m)
 {
     m.lock();
 }
 
+MutexLocker::MutexLocker(MutexLocker&& temp):
+    m(temp.m)
+{
+    temp.m = NULL;
+}
+
 MutexLocker::~MutexLocker()
 {
-    m.unlock();
+    if (m)
+        m->unlock();
 }
 
 

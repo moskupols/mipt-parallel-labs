@@ -16,18 +16,16 @@ static ostringstream dout;
 #endif
 OstreamMutex debugMutex(dout);
 
-void out(OstreamMutex& mut, const string& msg)
-{
-    OstreamLocker locker(mut);
-    locker.get() << msg;
-}
+OstreamLocker out() { return OstreamLocker(coutMutex); }
+OstreamLocker err() { return OstreamLocker(cerrMutex); }
+OstreamLocker debug() { return OstreamLocker(debugMutex); }
 
-void out(const string& msg) { out(coutMutex, msg); }
-void outLn(const string& msg) { out(coutMutex, msg + "\n"); }
+void out(const string& s) { out() << s; }
+void err(const string& s) { err() << s; }
 
-void err(const string& msg) { out(cerrMutex, msg); }
-void errLn(const string& msg) { out(cerrMutex, msg + "\n"); }
-
-void debug(const string& msg) { out(debugMutex, msg); }
-void debugLn(const string& msg) { out(debugMutex, msg + "\n"); }
+#ifdef DEBUG_OUTPUT
+void debug(const string& s) { debug() << s << "\n"; }
+#else
+void debug(const string&) {}
+#endif
 

@@ -2,6 +2,7 @@
 #define OUTPUT_HXX_INCLUDED
 
 #include <iostream>
+#include <string>
 #include "thread.hxx"
 
 typedef ResourceMutex<std::ostream> OstreamMutex;
@@ -12,10 +13,20 @@ public:
     OstreamLocker(OstreamMutex& m):
         ResourceLocker<std::ostream>(m)
     {}
+    OstreamLocker(OstreamLocker&& temp):
+        ResourceLocker<std::ostream>(std::move(temp))
+    {}
 
     ~OstreamLocker()
     {
         get().flush();
+    }
+
+    template<class T>
+    OstreamLocker& operator << (T some)
+    {
+        get() << some;
+        return *this;
     }
 };
 
@@ -23,16 +34,13 @@ extern OstreamMutex coutMutex;
 extern OstreamMutex cerrMutex;
 extern OstreamMutex debugMutex;
 
-void out(OstreamMutex& mut, const std::string& msg);
+OstreamLocker out();
+OstreamLocker err();
+OstreamLocker debug();
 
-void out(const std::string& msg);
-void outLn(const std::string& msg);
-
-void err(const std::string& msg);
-void errLn(const std::string& msg);
-
-void debug(const std::string& msg);
-void debugLn(const std::string& msg);
+void out(const std::string&);
+void err(const std::string&);
+void debug(const std::string&);
 
 #endif
 

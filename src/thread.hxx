@@ -2,6 +2,7 @@
 #define THREAD_HXX_INCLUDED
 
 #include <pthread.h>
+#include <memory>
 
 #include "utils.hxx"
 
@@ -52,10 +53,11 @@ class MutexLocker : Noncopyable
 {
 public:
     explicit MutexLocker(Mutex& m);
+    MutexLocker(MutexLocker&& temp);
     ~MutexLocker();
 
 private:
-    Mutex& m;
+    Mutex* m;
 };
 
 class Cond
@@ -96,6 +98,10 @@ public:
     ResourceLocker(ResourceMutex<R>& r):
         MutexLocker(r.m),
         r(r)
+    {}
+    ResourceLocker(ResourceLocker<R>&& temp):
+        MutexLocker(std::move(temp)),
+        r(temp.r)
     {}
 
     R& get() { return r.res; }
