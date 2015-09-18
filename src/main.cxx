@@ -1,8 +1,10 @@
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <map>
 #include <memory>
+
 #include <cstdlib>
 
 #include "output.hxx"
@@ -21,6 +23,7 @@ using std::map;
 
 using std::cin;
 using std::istringstream;
+using std::ifstream;
 
 vector<string> split(const string& s)
 {
@@ -75,18 +78,16 @@ void start(Params p)
     try
     {
         concurrency = toInt(p[0]);
-        // if (p.size() == 3)
-        // {
+        if (p.size() == 3)
+        {
             int h = toInt(p[1]), w = toInt(p[2]);
-            matrix = Matrix(h, w);
-            matrix.set(0, 0, true);
-            matrix.set(1, 1, true);
-            matrix.set(0, 1, true);
-        // }
-        // else
-        // {
-
-        // }
+            matrix = Matrix::random(h, w, 42);
+        }
+        else
+        {
+            ifstream csv(p[1]);
+            matrix = Matrix::fromCsv(csv);
+        }
     }
     catch (domain_error& e)
     {

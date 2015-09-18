@@ -20,5 +20,13 @@ public:
     {}
 };
 
+class InputError : public std::runtime_error
+{
+public:
+    explicit InputError(const std::string& what):
+        std::runtime_error(what)
+    {}
+};
+
 #endif
 

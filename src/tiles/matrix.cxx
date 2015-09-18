@@ -1,6 +1,14 @@
 #include "matrix.hxx"
 
 #include <cstring>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <algorithm>
+
+#include "../exceptions.hxx"
+
+using namespace std;
 
 namespace game_of_life
 {
@@ -23,14 +31,15 @@ Matrix::Matrix(const AbstractTile& t):
     AbstractTile::copyValues(t);
 }
 
+Matrix::Matrix(Matrix&& temp):
+    height(temp.height),
+    width(temp.width),
+    data(temp.data)
+{
+    temp.data = NULL;
+}
+
 Matrix::~Matrix() { delete[] data; }
-
-size_t Matrix::getHeight() const { return height; }
-size_t Matrix::getWidth() const { return width; }
-
-bool Matrix::at(coord_t r, coord_t c) const { return data[r * getWidth() + c]; }
-
-void Matrix::set(coord_t r, coord_t c, bool v) { data[r * getWidth() + c] = v; }
 
 void Matrix::operator=(const Matrix& m)
 {
@@ -43,5 +52,51 @@ void Matrix::operator=(const Matrix& m)
     }
     memcpy(data, m.data, height * width * sizeof(data[0]));
 }
+
+size_t Matrix::getHeight() const { return height; }
+size_t Matrix::getWidth() const { return width; }
+
+bool Matrix::at(coord_t r, coord_t c) const { return data[r * getWidth() + c]; }
+void Matrix::set(coord_t r, coord_t c, bool v) { data[r * getWidth() + c] = v; }
+
+Matrix Matrix::fromCsv(std::istream& in)
+{
+    vector<pair<int, int>> alive;
+    string line;
+    int h = 0;
+    int w = 0;
+    for (; getline(in, line); ++h)
+    {
+        istringstream iss(line);
+        int i = 0;
+        string s;
+        for (; getline(iss, s, ';'); ++i)
+        {
+            if (s == "1" || s == "#")
+                alive.push_back(make_pair(h-1, i));
+            else if (s != "0" && s != ".")
+                throw InputError("CSV incorrect");
+        }
+        w = max(w, i);
+    }
+    Matrix ret(h, w);
+    for (size_t i = 0; i < alive.size(); ++i)
+        ret.set(alive[i].first, alive[i].second, true);
+    return ret;
+}
+
+Matrix Matrix::random(size_t height, size_t width, int seed)
+{
+    Matrix ret(height, width);
+
+    srand(seed);
+    int n = rand() % (height * width + 1);
+
+    memset(ret.data, 1, n * sizeof(bool));
+    random_shuffle(ret.data, ret.data + height * width);
+
+    return ret;
+}
+
 }
 
