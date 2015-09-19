@@ -9,14 +9,12 @@ namespace game_of_life
 {
 
 AbstractTile::AbstractTile():
-    borders(NULL),
-    inner(NULL)
+    borders(NULL)
 { }
 
 AbstractTile::~AbstractTile()
 {
     delete[] borders;
-    delete inner;
 }
 
 void AbstractTile::copyValues(const AbstractTile& t)
@@ -56,7 +54,7 @@ Borders AbstractTile::getBorders()
         return borders;
     borders = new Border[SIDE_COUNT];
     for (size_t i = 0; i < SIDE_COUNT; ++i)
-        borders[i] = TileView(*this, getBorderRect(static_cast<Side>(i)));
+        borders[i] = makeSlice(getBorderRect(static_cast<Side>(i)));
     return borders;
 }
 
@@ -69,9 +67,7 @@ Border AbstractTile::getBorder(Side s)
 
 TileView AbstractTile::getInner()
 {
-    if (!inner)
-        inner = new TileView(*this, getInnerRect());
-    return *inner;
+    return makeSlice(getInnerRect());
 }
 
 TileView AbstractTile::makeSlice(const CoordRect& r)

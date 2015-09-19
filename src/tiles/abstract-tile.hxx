@@ -34,7 +34,6 @@ public:
     virtual void output(std::ostream& out) const;
 private:
     Border* borders;
-    TileView* inner;
 };
 
 }
