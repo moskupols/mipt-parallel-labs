@@ -22,6 +22,7 @@ public:
     }
 };
 
+#ifdef DEBUG_OUTPUT
 class DebugStreamLocker : public OstreamLocker
 {
 public:
@@ -29,6 +30,14 @@ public:
     DebugStreamLocker(DebugStreamLocker&& temp);
     ~DebugStreamLocker();
 };
+#else
+class DebugStreamLocker
+{
+public:
+    template<class T>
+    DebugStreamLocker& operator << (const T&) { return *this; }
+};
+#endif
 
 extern OstreamMutex coutMutex;
 extern OstreamMutex cerrMutex;

@@ -20,6 +20,7 @@ OstreamLocker::~OstreamLocker()
         get().flush();
 }
 
+#ifdef DEBUG_OUTPUT
 DebugStreamLocker::DebugStreamLocker(OstreamMutex& m):
     OstreamLocker(m)
 {
@@ -34,6 +35,7 @@ DebugStreamLocker::~DebugStreamLocker()
     if (isValid())
         get() << "\n";
 }
+#endif
 
 OstreamMutex coutMutex(cout);
 OstreamMutex cerrMutex(cerr);
@@ -47,7 +49,11 @@ OstreamMutex debugMutex(dout);
 
 OstreamLocker out() { return OstreamLocker(coutMutex); }
 OstreamLocker err() { return OstreamLocker(cerrMutex); }
+#ifdef DEBUG_OUTPUT
 DebugStreamLocker debug() { return DebugStreamLocker(debugMutex); }
+#else
+DebugStreamLocker debug() { return DebugStreamLocker(); }
+#endif
 
 void out(const string& s) { out() << s; }
 void err(const string& s) { err() << s; }

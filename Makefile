@@ -3,7 +3,7 @@ CXX := g++-4.4
 
 DEBUG_OUTPUT := '"debug.log"'
 
-DEBUG_CXX_FLAGS := -std=c++0x -Wall -Wextra -fstack-protector -ggdb
+DEBUG_CXX_FLAGS := -std=c++0x -Wall -Wextra -fstack-protector -ggdb -DDEBUG_OUTPUT=$(DEBUG_OUTPUT)
 RELEASE_CXX_FLAGS := -std=c++0x -Wall -Wextra -fstack-protector -O3
 # CXX_FLAGS += -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=address,undefined
 
@@ -24,9 +24,6 @@ build/debug/main: $(DEBUG_OBJECTS)
 
 build/release/main: $(RELEASE_OBJECTS)
 	$(CXX) $^ $(LD_FLAGS) -o $@
-
-build/debug/output.o: src/output.cxx
-	$(CXX) -c $< -DDEBUG_OUTPUT=$(DEBUG_OUTPUT) $(DEBUG_CXX_FLAGS) -o $@
 
 build/debug/%.o: src/%.cxx
 	$(CXX) -c $< $(DEBUG_CXX_FLAGS) -o $@
