@@ -152,3 +152,45 @@ void Cond::wakeAll()
         THROW_C_ERROR();
 }
 
+
+
+Semaphore::Semaphore(int value)
+{
+    if (sem_init(&sem, 0, value)) // 0 stands for 'don't share with other processes'
+        THROW_C_ERROR();
+}
+
+Semaphore::~Semaphore()
+{
+    if (sem_destroy(&sem))
+        THROW_C_ERROR();
+}
+
+void Semaphore::post()
+{
+    if (sem_post(&sem))
+        THROW_C_ERROR();
+}
+
+void Semaphore::wait()
+{
+    if (sem_wait(&sem))
+        THROW_C_ERROR();
+}
+
+
+
+SemaphoreMutex::SemaphoreMutex():
+    sem(1)
+{}
+
+void SemaphoreMutex::lock()
+{
+    sem.wait();
+}
+
+void SemaphoreMutex::unlock()
+{
+    sem.post();
+}
+

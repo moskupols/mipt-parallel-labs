@@ -2,6 +2,7 @@
 #define THREAD_HXX_INCLUDED
 
 #include <pthread.h>
+#include <semaphore.h>
 #include <memory>
 
 #include "utils.hxx"
@@ -116,6 +117,31 @@ public:
     R& get() { return r.res; }
 private:
     ResourceMutex<R>& r;
+};
+
+class Semaphore
+{
+public:
+    explicit Semaphore(int value = 0);
+    ~Semaphore();
+
+    void post();
+    void wait();
+
+private:
+    sem_t sem;
+};
+
+class SemaphoreMutex
+{
+public:
+    SemaphoreMutex();
+
+    void lock();
+    void unlock();
+
+private:
+    Semaphore sem;
 };
 
 #endif
