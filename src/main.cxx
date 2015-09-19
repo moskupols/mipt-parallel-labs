@@ -137,7 +137,14 @@ void run(Params p)
         throw IncorrectCommandException(
                 TAG + "task unknown, use START to initialize.");
     case Manager::STOPPED:
-        runs = toInt(p[0]);
+        try
+        {
+            runs = toInt(p[0]);
+        }
+        catch (domain_error& e)
+        {
+            throw IncorrectCommandException(TAG + e.what());
+        }
         debug(TAG + "trying to add " + p[0] + " iterations");
         manager.runForMore(runs);
         break;

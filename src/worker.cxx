@@ -13,6 +13,11 @@ int countNeighborsAlive(const AbstractTile& t, coord_t r, coord_t c)
             ++ret;
     return ret;
 }
+
+bool willLive(bool lived, int neigh)
+{
+    return neigh == 3 || (lived && neigh == 2);
+}
 } // namespace anonymous
 
 void Worker::makeIteration(const AbstractTile& prev, AbstractTile& next)
@@ -23,7 +28,7 @@ void Worker::makeIteration(const AbstractTile& prev, AbstractTile& next)
         for (coord_t c = 0; c < w; ++c)
         {
             int neigh = countNeighborsAlive(prev, r, c);
-            next.set(r, c, neigh == 2 || neigh == 3);
+            next.set(r, c, willLive(prev.at(r, c), neigh));
         }
 }
 
