@@ -99,7 +99,7 @@ void Mutex::unlock()
 
 
 
-MutexLocker::MutexLocker(Mutex& m):
+MutexLocker::MutexLocker(AbstractMutex& m):
     m(&m),
     valid(true)
 {

@@ -35,7 +35,7 @@ protected:
 private:
     int workersCount;
     int workersWaiting;
-    Mutex workersMutex;
+    SemaphoreMutex workersMutex;
 
     int stop;
     Mutex stopMutex;

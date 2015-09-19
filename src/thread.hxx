@@ -40,7 +40,16 @@ private:
     bool running;
 };
 
-class Mutex
+class AbstractMutex
+{
+public:
+    virtual ~AbstractMutex() {}
+
+    virtual void lock() = 0;
+    virtual void unlock() = 0;
+};
+
+class Mutex : public AbstractMutex
 {
 public:
     Mutex();
@@ -58,7 +67,7 @@ private:
 class MutexLocker : Noncopyable
 {
 public:
-    explicit MutexLocker(Mutex& m);
+    explicit MutexLocker(AbstractMutex& m);
     MutexLocker(MutexLocker&& temp);
     ~MutexLocker();
 
@@ -66,7 +75,7 @@ protected:
     bool isValid() const;
 
 private:
-    Mutex* m;
+    AbstractMutex* m;
     bool valid;
 };
 
@@ -132,7 +141,7 @@ private:
     sem_t sem;
 };
 
-class SemaphoreMutex
+class SemaphoreMutex : public AbstractMutex
 {
 public:
     SemaphoreMutex();
