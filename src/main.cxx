@@ -19,6 +19,7 @@ using std::string;
 
 using std::exception;
 using std::domain_error;
+using std::bad_alloc;
 
 using std::map;
 
@@ -104,6 +105,11 @@ void start(Params p)
     catch (domain_error& e)
     {
         throw IncorrectCommandException(TAG + e.what());
+    }
+    catch (bad_alloc& e)
+    {
+        throw IncorrectCommandException(TAG +
+                "couldn't allocate enough memory");
     }
     debug(TAG + "starting the manager");
     manager.start(matrix, concurrency);
