@@ -20,6 +20,7 @@ struct CoordRect
 
     size_t getHeight() const;
     size_t getWidth() const;
+    bool isEmpty() const;
 
     bool contains(coord_t r, coord_t c) const;
 

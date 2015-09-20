@@ -11,6 +11,10 @@ CoordRect::CoordRect(coord_t r1, coord_t c1, coord_t r2, coord_t c2):
 
 size_t CoordRect::getHeight() const { return r2 - r1; }
 size_t CoordRect::getWidth() const { return c2 - c1; }
+bool CoordRect::isEmpty() const
+{
+    return getWidth() <= 0 || getHeight() <= 0;
+}
 
 bool CoordRect::contains(coord_t r, coord_t c) const
 { return (r >= r1 && r < r2) && (c >= c1 && c < c2); }
