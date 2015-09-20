@@ -13,6 +13,8 @@ SOURCES = $(wildcard src/*.cxx) $(wildcard src/tiles/*.cxx)
 DEBUG_OBJECTS = $(patsubst src/%.cxx,build/debug/%.o,$(SOURCES))
 RELEASE_OBJECTS = $(patsubst src/%.cxx,build/release/%.o,$(SOURCES))
 
+all: debug release
+
 debug: build/debug/main
 release: build/release/main
 
@@ -31,4 +33,5 @@ build/debug/%.o: src/%.cxx
 build/release/%.o: src/%.cxx
 	$(CXX) -c $< $(RELEASE_CXX_FLAGS) -o $@
 
+.PHONY: all debug release run
 

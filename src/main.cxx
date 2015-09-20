@@ -127,7 +127,10 @@ void status(Params p)
     if (state != Manager::NOT_STARTED && state != Manager::RUNNING)
     {
         o << "After iteration " << manager.getShared().getStop() << ":\n";
-        matrix.output(o.get());
+        if (matrix.getWidth() * matrix.getHeight() > 1000)
+            o << "<matrix is too large to print it>\n";
+        else
+            matrix.output(o.get());
     }
 }
 
