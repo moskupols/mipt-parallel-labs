@@ -23,7 +23,7 @@ RELEASE_OBJECTS := $(patsubst src/%.cxx,$(RELEASE_DIR)/%.o,$(SOURCES))
 OBJECTS := $(DEBUG_OBJECTS) $(RELEASE_OBJECTS)
 OBJ_DIRS := $(sort $(dir $(OBJECTS) $(DEBUG_TARGET) $(RELEASE_TARGET)))
 
-CONCURRENCIES := 1 2 3 4 5 8 30 60
+CONCURRENCIES := 1 2 3 4 5 8 11 16 27 32 64 500
 TEST_DIR := out
 TESTS := $(patsubst %,$(TEST_DIR)/%.out,$(CONCURRENCIES))
 
@@ -41,10 +41,17 @@ run-release: $(RELEASE_TARGET)
 	$(RELEASE_TARGET)
 
 bench: $(RELEASE_TARGET)
-	for i in $(CONCURRENCIES); do ./bench.sh $(RELEASE_TARGET) $$i 300 300 300; done
+	for i in $(CONCURRENCIES); do \
+		echo "Concurrency $$i:" && \
+		time ./run.sh $(RELEASE_TARGET) $$i 200 200 200 >/dev/null;\
+	done
 
 test: $(TESTS)
-	for i in $(TESTS); do for j in $(TESTS); do diff -q $$i $$j; done; done
+	for i in $(TESTS); do\
+		for j in $(TESTS); do\
+			diff -q $$i $$j;\
+		done;\
+	done
 
 $(DEBUG_TARGET): $(DEBUG_OBJECTS)
 	$(CXX) $^ $(LD_FLAGS) -o $@
