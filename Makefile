@@ -1,5 +1,5 @@
 CXX := g++-4.4
-# CXX := g++
+CXX := g++
 
 DEBUG_OUTPUT := '"debug.log"'
 
