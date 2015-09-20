@@ -198,6 +198,18 @@ void quit(Params p)
     exit(0);
 }
 
+void block(Params p)
+{
+    static const string TAG("BLOCK: ");
+    checkParamCount(TAG, p, 0, 0);
+
+    debug(TAG);
+    if (manager.getState() == Manager::NOT_STARTED)
+        throw IncorrectCommandException(TAG + "not running");
+    manager.wakeWhenStateIs(Manager::STOPPED);
+    debug(TAG + "awake and resuming");
+}
+
 void unknownCommand(const string& s)
 {
     throw IncorrectCommandException(string("\"") + s + "\" is not supported ._.");
@@ -211,6 +223,7 @@ int main()
     cmdMap["RUN"] = run;
     cmdMap["STOP"] = stop;
     cmdMap["QUIT"] = quit;
+    cmdMap["BLOCK"] = block;
 
     string line;
     debug("---------------- RESTART ----------------------");
