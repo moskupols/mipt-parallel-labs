@@ -31,8 +31,13 @@ all: debug release
 debug: $(DEBUG_TARGET)
 release: $(RELEASE_TARGET)
 
-run: $(DEBUG_TARGET)
+run: run-release
+
+run-debug: $(DEBUG_TARGET)
 	$(DEBUG_TARGET)
+
+run-release: $(RELEASE_TARGET)
+	$(RELEASE_TARGET)
 
 test: $(TESTS)
 	for i in $(TESTS); do for j in $(TESTS); do diff -q $$i $$j; done; done
@@ -60,7 +65,7 @@ $(RELEASE_DIR)/%.o: src/%.cxx
 	$(CXX) -c $< $(RELEASE_CXX_FLAGS) -o $@
 
 clean:
-	rm -f $(OBJECTS) $(DEBUG_TARGET) $(RELEASE_TARGET)
+	rm -f $(OBJECTS) $(DEBUG_TARGET) $(RELEASE_TARGET) $(TESTS)
 
-.PHONY: all debug release run clean
+.PHONY: all debug release run clean run-release run-debug test
 
