@@ -23,6 +23,9 @@ RELEASE_OBJECTS := $(patsubst src/%.cxx,$(RELEASE_DIR)/%.o,$(SOURCES))
 OBJECTS := $(DEBUG_OBJECTS) $(RELEASE_OBJECTS)
 OBJ_DIRS := $(sort $(dir $(OBJECTS) $(DEBUG_TARGET) $(RELEASE_TARGET)))
 
+TEST_DIR := out
+TESTS := $(patsubst %,$(TEST_DIR)/%.out,1 2 3 4 5 8 30 60)
+
 all: debug release
 
 debug: $(DEBUG_TARGET)
@@ -31,15 +34,23 @@ release: $(RELEASE_TARGET)
 run: $(DEBUG_TARGET)
 	$(DEBUG_TARGET)
 
+test: $(TESTS)
+	for i in $(TESTS); do for j in $(TESTS); do diff -q $$i $$j; done; done
+
 $(DEBUG_TARGET): $(DEBUG_OBJECTS)
 	$(CXX) $^ $(LD_FLAGS) -o $@
 
 $(RELEASE_TARGET): $(RELEASE_OBJECTS)
 	$(CXX) $^ $(LD_FLAGS) -o $@
 
+$(TESTS): | $(TEST_DIR)
+
+$(TEST_DIR)/%.out: $(RELEASE_TARGET)
+	./run.sh $(RELEASE_TARGET) $(notdir $(basename $@)) inputs/glider.csv '' 8 >$@
+
 $(OBJECTS): | $(OBJ_DIRS)
 
-$(OBJ_DIRS):
+$(OBJ_DIRS) $(TEST_DIR):
 	mkdir -p $@
 
 $(DEBUG_DIR)/%.o: src/%.cxx
