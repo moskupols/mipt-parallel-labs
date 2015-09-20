@@ -136,8 +136,10 @@ Cond::~Cond()
 
 void Cond::wait(Mutex& m)
 {
+    debug("SLEEPING");
     if (pthread_cond_wait(&descriptor, &m.descriptor))
         THROW_C_ERROR();
+    debug("AWAKE");
 }
 
 void Cond::wakeOne()

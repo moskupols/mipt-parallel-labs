@@ -17,6 +17,7 @@ public:
     ThreadedManagerShared(ThreadedManager& manager);
 
     bool wakeWhenNextIterationNeeded(int iterationPublished);
+    void wakeWhenStopIs(int needed);
 
     int getStop() const;
 

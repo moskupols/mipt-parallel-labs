@@ -1,4 +1,5 @@
 #include <memory>
+#include <cassert>
 
 #include "threaded-manager.hxx"
 #include "threaded-worker.hxx"
@@ -28,6 +29,13 @@ bool ThreadedManagerShared::wakeWhenNextIterationNeeded(int have)
         decWorkersWaiting();
     }
     return stop != -1;
+}
+
+void ThreadedManagerShared::wakeWhenStopIs(int needed)
+{
+    MutexLocker locker(stopMutex);
+    while (getStop() != needed)
+        stopCond.wait(stopMutex);
 }
 
 int ThreadedManagerShared::getStop() const
@@ -86,6 +94,7 @@ void ThreadedManager::start(Matrix& t, int concurrency)
     this->concurrency = concurrency;
 
     Manager::start();
+    wakeWhenStateIsNot(NOT_STARTED);
 }
 
 ThreadedManagerShared& ThreadedManager::getShared()
@@ -93,24 +102,36 @@ ThreadedManagerShared& ThreadedManager::getShared()
 
 void ThreadedManager::pauseAll()
 {
-    MutexLocker locker(mutex);
-    pauseFlag = true;
-    cond.wakeOne();
+    assert(getState() != NOT_STARTED);
+    {
+        MutexLocker locker(mutex);
+        pauseFlag = true;
+        cond.wakeOne();
+    }
+    wakeWhenStateIs(STOPPED);
 }
 
 void ThreadedManager::runForMore(int iterations)
 {
-    MutexLocker locker(mutex);
-    pauseFlag = false;
-    runMore += iterations;
-    cond.wakeOne();
+    int oldStop;
+    {
+        MutexLocker locker(mutex);
+        oldStop = getShared().getStop();
+        pauseFlag = false;
+        runMore = iterations;
+        cond.wakeOne();
+    }
+    getShared().wakeWhenStopIs(oldStop + iterations);
 }
 
 void ThreadedManager::shutdown()
 {
-    MutexLocker locker(mutex);
-    shutdownFlag = true;
-    cond.wakeOne();
+    {
+        MutexLocker locker(mutex);
+        shutdownFlag = true;
+        cond.wakeOne();
+    }
+    getShared().wakeWhenStopIs(-1);
 }
 
 void ThreadedManager::updateState()
@@ -122,7 +143,7 @@ void ThreadedManager::updateState()
 
 void ThreadedManager::run()
 {
-    setState(RUNNING);
+    debug("initializing workers");
     getShared().setWorkersCount(concurrency);
 
     UniqueArray<ThreadedWorker> workers(concurrency);
@@ -144,6 +165,15 @@ void ThreadedManager::run()
         workers[i].start(myShared, domains[i], shareds);
     }
 
+    debug("waiting for workers to initialize themselves");
+    {
+        MutexLocker locker(mutex);
+        while (!this->updateFlag)
+            cond.wait(mutex);
+        this->updateFlag = false;
+    }
+
+    debug("all workers are initialized");
     int stop = 0;
     setState(STOPPED);
     while (true)
@@ -160,13 +190,23 @@ void ThreadedManager::run()
                 cond.wait(mutex);
 
             if (this->shutdownFlag)
+            {
+                debug("manager received shutdownFlag");
                 break;
+            }
             else if (this->pauseFlag)
+            {
+                debug("manager received pauseFlag");
                 pauseFlag = true;
+            }
             else
             {
                 runMore = this->runMore;
                 updateFlag = this->updateFlag;
+                if (runMore)
+                    debug() << "manager received runMore = " << runMore;
+                if (updateFlag)
+                    debug("manager received updateFlag");
             }
             this->pauseFlag = false;
             this->runMore = 0;
@@ -200,7 +240,13 @@ void ThreadedManager::run()
         {
             if (getState() == RUNNING
                     && getShared().getWorkersWaiting() == concurrency)
-                setState(STOPPED);
+            {
+                bool over = true;
+                for (int i = 0; i < concurrency; ++i)
+                    over &= workers[i].getShared().getIterationPublished() == stop;
+                if (over)
+                    setState(STOPPED);
+            }
         }
     }
     myShared.setStop(-1);
