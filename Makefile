@@ -9,29 +9,47 @@ RELEASE_CXX_FLAGS := -std=c++0x -Wall -Wextra -fstack-protector -O3
 
 LD_FLAGS := $(CXX_FLAGS) -pthread
 
-SOURCES = $(wildcard src/*.cxx) $(wildcard src/tiles/*.cxx)
-DEBUG_OBJECTS = $(patsubst src/%.cxx,build/debug/%.o,$(SOURCES))
-RELEASE_OBJECTS = $(patsubst src/%.cxx,build/release/%.o,$(SOURCES))
+BUILD_DIR := build
+DEBUG_DIR := $(BUILD_DIR)/debug
+RELEASE_DIR := $(BUILD_DIR)/release
+
+DEBUG_TARGET := $(DEBUG_DIR)/main
+RELEASE_TARGET := $(RELEASE_DIR)/main
+
+SOURCES := $(wildcard src/*.cxx) $(wildcard src/tiles/*.cxx)
+
+DEBUG_OBJECTS := $(patsubst src/%.cxx,$(DEBUG_DIR)/%.o,$(SOURCES))
+RELEASE_OBJECTS := $(patsubst src/%.cxx,$(RELEASE_DIR)/%.o,$(SOURCES))
+OBJECTS := $(DEBUG_OBJECTS) $(RELEASE_OBJECTS)
+OBJ_DIRS := $(sort $(dir $(OBJECTS)))
 
 all: debug release
 
-debug: build/debug/main
-release: build/release/main
+debug: $(DEBUG_TARGET)
+release: $(RELEASE_TARGET)
 
-run: build/debug/main
-	build/debug/main
+run: $(DEBUG_TARGET)
+	$(DEBUG_TARGET)
 
-build/debug/main: $(DEBUG_OBJECTS)
+$(DEBUG_TARGET): $(DEBUG_OBJECTS)
 	$(CXX) $^ $(LD_FLAGS) -o $@
 
-build/release/main: $(RELEASE_OBJECTS)
+$(RELEASE_TARGET): $(RELEASE_OBJECTS)
 	$(CXX) $^ $(LD_FLAGS) -o $@
 
-build/debug/%.o: src/%.cxx
+$(OBJECTS): | $(OBJ_DIRS)
+
+$(OBJ_DIRS):
+	mkdir -p $@
+
+$(DEBUG_DIR)/%.o: src/%.cxx
 	$(CXX) -c $< $(DEBUG_CXX_FLAGS) -o $@
 
-build/release/%.o: src/%.cxx
+$(RELEASE_DIR)/%.o: src/%.cxx
 	$(CXX) -c $< $(RELEASE_CXX_FLAGS) -o $@
 
-.PHONY: all debug release run
+clean:
+	rm -f $(OBJECTS) $(DEBUG_TARGET) $(RELEASE_TARGET)
+
+.PHONY: all debug release run clean
 
