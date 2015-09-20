@@ -13,15 +13,15 @@ BUILD_DIR := build
 DEBUG_DIR := $(BUILD_DIR)/debug
 RELEASE_DIR := $(BUILD_DIR)/release
 
-DEBUG_TARGET := $(DEBUG_DIR)/main
-RELEASE_TARGET := $(RELEASE_DIR)/main
+DEBUG_TARGET := bin/debug
+RELEASE_TARGET := bin/release
 
 SOURCES := $(wildcard src/*.cxx) $(wildcard src/tiles/*.cxx)
 
 DEBUG_OBJECTS := $(patsubst src/%.cxx,$(DEBUG_DIR)/%.o,$(SOURCES))
 RELEASE_OBJECTS := $(patsubst src/%.cxx,$(RELEASE_DIR)/%.o,$(SOURCES))
 OBJECTS := $(DEBUG_OBJECTS) $(RELEASE_OBJECTS)
-OBJ_DIRS := $(sort $(dir $(OBJECTS)))
+OBJ_DIRS := $(sort $(dir $(OBJECTS) $(DEBUG_TARGET) $(RELEASE_TARGET)))
 
 all: debug release
 

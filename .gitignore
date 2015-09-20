@@ -1,5 +1,5 @@
 .*.swp
-*.o
-main
+bin/
+build/
 debug.log
 
