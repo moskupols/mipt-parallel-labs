@@ -73,7 +73,7 @@ $(RELEASE_DIR)/%.o: src/%.cxx
 	$(CXX) -c $< $(RELEASE_CXX_FLAGS) -o $@
 
 clean:
-	rm -f $(OBJECTS) $(DEBUG_TARGET) $(RELEASE_TARGET) $(TESTS)
+	rm -f $(wildcard $(OBJECTS) $(DEBUG_TARGET) $(RELEASE_TARGET) $(TESTS))
 
 .PHONY: all debug release run clean run-release run-debug test bench
 
