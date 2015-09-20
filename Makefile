@@ -23,8 +23,9 @@ RELEASE_OBJECTS := $(patsubst src/%.cxx,$(RELEASE_DIR)/%.o,$(SOURCES))
 OBJECTS := $(DEBUG_OBJECTS) $(RELEASE_OBJECTS)
 OBJ_DIRS := $(sort $(dir $(OBJECTS) $(DEBUG_TARGET) $(RELEASE_TARGET)))
 
+CONCURRENCIES := 1 2 3 4 5 8 30 60
 TEST_DIR := out
-TESTS := $(patsubst %,$(TEST_DIR)/%.out,1 2 3 4 5 8 30 60)
+TESTS := $(patsubst %,$(TEST_DIR)/%.out,$(CONCURRENCIES))
 
 all: debug release
 
@@ -38,6 +39,9 @@ run-debug: $(DEBUG_TARGET)
 
 run-release: $(RELEASE_TARGET)
 	$(RELEASE_TARGET)
+
+bench: $(RELEASE_TARGET)
+	for i in $(CONCURRENCIES); do ./bench.sh $(RELEASE_TARGET) $$i 300 300 300; done
 
 test: $(TESTS)
 	for i in $(TESTS); do for j in $(TESTS); do diff -q $$i $$j; done; done
@@ -67,5 +71,5 @@ $(RELEASE_DIR)/%.o: src/%.cxx
 clean:
 	rm -f $(OBJECTS) $(DEBUG_TARGET) $(RELEASE_TARGET) $(TESTS)
 
-.PHONY: all debug release run clean run-release run-debug test
+.PHONY: all debug release run clean run-release run-debug test bench
 
