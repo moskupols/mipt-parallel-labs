@@ -1,5 +1,6 @@
 #include <memory>
 #include <cassert>
+#include <cstdlib>
 
 #include "threaded-manager.hxx"
 #include "threaded-worker.hxx"
@@ -8,6 +9,9 @@
 
 #include "utils.hxx"
 #include "output.hxx"
+#include "exceptions.hxx"
+
+using namespace std;
 
 namespace game_of_life
 {
@@ -147,22 +151,30 @@ void ThreadedManager::run()
     getShared().setWorkersCount(concurrency);
 
     UniqueArray<ThreadedWorker> workers(concurrency);
-    UniqueArray<TileView> domains(concurrency);
-
     TorusView torus(*matrix);
-
-    std::vector<CoordRect> domainRects = chooseDomains(torus, concurrency);
-    for (int i = 0; i < concurrency; ++i)
-        domains[i] = TileView(torus, domainRects[i]);
-
-    std::vector<std::vector<int> > neigs = makeNeighbors(torus, domainRects);
-
-    for (int i = 0; i < concurrency; ++i)
+    vector<TileView> domains;
+    vector<std::vector<int> > neigs;
+    try
     {
-        std::vector<ThreadedWorkerShared*> shareds(neigs[i].size());
-        for (size_t j = 0; j < neigs[i].size(); ++j)
-            shareds[j] = &workers[neigs[i][j]].getShared();
-        workers[i].start(myShared, domains[i], shareds);
+
+        std::vector<CoordRect> domainRects = chooseDomains(torus, concurrency);
+        for (int i = 0; i < concurrency; ++i)
+            domains.push_back(TileView(torus, domainRects[i]));
+
+        neigs = makeNeighbors(torus, domainRects);
+
+        for (int i = 0; i < concurrency; ++i)
+        {
+            std::vector<ThreadedWorkerShared*> shareds(neigs[i].size());
+            for (size_t j = 0; j < neigs[i].size(); ++j)
+                shareds[j] = &workers[neigs[i][j]].getShared();
+            workers[i].start(myShared, domains[i], shareds);
+        }
+    }
+    catch (exception& e)
+    {
+        err() << "Failed to initialize workers: " << e.what() << "\n";
+        ::exit(1);
     }
 
     debug("waiting for workers to initialize themselves");
