@@ -20,9 +20,9 @@ ThreadedManagerShared::ThreadedManagerShared(ThreadedManager& manager):
 
 bool ThreadedManagerShared::wakeWhenNextIterationNeeded(int have)
 {
-    MutexLocker locker(stopMutex);
     if (stop != -1 && stop <= have)
     {
+        MutexLocker locker(stopMutex);
         incWorkersWaiting();
         while (stop != -1 && stop <= have)
             stopCond.wait(stopMutex);

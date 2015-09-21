@@ -9,9 +9,12 @@ namespace
 {
 void wakeWhenReaches(int& watched, int desired, Mutex& m, Cond& c)
 {
-    MutexLocker locker(m);
-    while (watched < desired)
-        c.wait(m);
+    if (watched < desired)
+    {
+        MutexLocker locker(m);
+        while (watched < desired)
+            c.wait(m);
+    }
 }
 void incAndWakeAll(int& x, Mutex& m, Cond& c)
 {
