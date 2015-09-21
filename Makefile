@@ -41,7 +41,7 @@ run-release: $(RELEASE_TARGET)
 	$(RELEASE_TARGET)
 
 bench: $(RELEASE_TARGET)
-	./bench.sh $(CONCURRENCIES)
+	$(SHELL) bench.sh $(CONCURRENCIES)
 
 test: $(TESTS)
 	for i in $(TESTS); do\
@@ -59,7 +59,7 @@ $(RELEASE_TARGET): $(RELEASE_OBJECTS)
 $(TESTS): | $(TEST_DIR)
 
 $(TEST_DIR)/%.out: $(RELEASE_TARGET)
-	./run.sh $(RELEASE_TARGET) $(notdir $(basename $@)) inputs/glider.csv '' 8 >$@
+	$(SHELL) run.sh $(RELEASE_TARGET) $(notdir $(basename $@)) inputs/glider.csv '' 8 >$@
 
 $(OBJECTS): | $(OBJ_DIRS)
 
