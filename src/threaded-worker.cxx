@@ -88,8 +88,9 @@ void ThreadedWorker::run()
         debug() << "calced inners for iter " << myIter << "->" << myIter+1
             << ": " << innerResult.getWindow();
 
-        bool has[2] = {false, false};
         static const int neighSides[2] = {SIDE_N, SIDE_S};
+        {
+        bool has[2] = {false, false};
         for (bool first = true; !has[0] || !has[1]; first = false)
         {
             if (!first)
@@ -99,15 +100,25 @@ void ThreadedWorker::run()
                     && (h > 1 || neighShared[1-i]->getIterationPublished(i) == myIter))
                 {
                     has[i] = true;
-                    makeIteration(
-                            resultBorders[neighSides[i]],
-                            tempBorders[neighSides[i]]);
+                    if (h > 1 || !has[1-i])
+                    {
+                        makeIteration(
+                                resultBorders[neighSides[i]],
+                                tempBorders[neighSides[i]]);
+                    }
                     debug() << "calced side " << i
                         << " for iter " << myIter << "->" << myIter+1
                         << ": " << resultBorders[neighSides[i]].getWindow();
                     myShared.incIterationCalced(i);
                     neighShared[i]->wake();
+                    if (h == 1)
+                    {
+                        has[1-i] = true;
+                        myShared.incIterationCalced(1-i);
+                        neighShared[1-i]->wake();
+                    }
                 }
+        }
         }
 
         innerResult.copyValues(innerTemp);
@@ -116,6 +127,7 @@ void ThreadedWorker::run()
 
         debug() << "published inners " << myIter << "->" << myIter+1;
 
+        {
         bool copied[2] = {false, false};
         for (bool first = true; !copied[0] || !copied[1]; first = false)
         {
@@ -126,12 +138,22 @@ void ThreadedWorker::run()
                     && (h > 1 || neighShared[1-i]->getIterationCalced(i) == myIter+1))
                 {
                     copied[i] = true;
-                    resultBorders[neighSides[i]]
-                        .copyValues(tempBorders[neighSides[i]]);
+                    if (h > 1 || !copied[1-i])
+                    {
+                        resultBorders[neighSides[i]]
+                            .copyValues(tempBorders[neighSides[i]]);
+                    }
                     debug() << "published side " << i << myIter << "->" << myIter+1;
                     myShared.incIterationPublished(i);
                     neighShared[i]->wake();
+                    if (h == 1)
+                    {
+                        copied[1-i] = true;
+                        myShared.incIterationPublished(1-i);
+                        neighShared[1-i]->wake();
+                    }
                 }
+        }
         }
     }
 

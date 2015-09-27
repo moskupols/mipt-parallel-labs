@@ -48,6 +48,7 @@ test: $(TESTS)
 		for j in $(TESTS); do\
 			diff -q $$i $$j;\
 		done;\
+		break;\
 	done
 
 $(DEBUG_TARGET): $(DEBUG_OBJECTS)
