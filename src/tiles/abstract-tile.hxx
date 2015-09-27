@@ -38,5 +38,10 @@ private:
 
 }
 
+namespace std
+{
+ostream& operator<<(ostream& out, const game_of_life::AbstractTile& t);
+}
+
 #endif
 

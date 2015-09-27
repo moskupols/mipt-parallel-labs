@@ -88,3 +88,13 @@ void AbstractTile::output(std::ostream& out) const
 }
 
 }
+
+namespace std
+{
+ostream& operator<<(ostream& out, const game_of_life::AbstractTile& t)
+{
+    t.output(out);
+    return out;
+}
+}
+

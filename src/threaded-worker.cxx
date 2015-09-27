@@ -2,57 +2,50 @@
 #include "threaded-manager.hxx"
 #include "output.hxx"
 
+using namespace std;
+
 namespace game_of_life
 {
-
-namespace
+ThreadedWorkerShared::ThreadedWorkerShared()
 {
-void wakeWhenReaches(int& watched, int desired, Mutex& m, Cond& c)
-{
-    if (watched < desired)
-    {
-        MutexLocker locker(m);
-        while (watched < desired)
-            c.wait(m);
-    }
-}
-void incAndWakeAll(int& x, Mutex& m, Cond& c)
-{
-    MutexLocker locker(m);
-    ++x;
-    c.wakeAll();
-}
-} // namespace anonymous
-
-
-
-ThreadedWorkerShared::ThreadedWorkerShared():
-    iterationCalced(0),
-    iterationPublished(0)
-{ }
-
-int ThreadedWorkerShared::getIterationCalced() const { return iterationCalced; }
-
-int ThreadedWorkerShared::getIterationPublished() const { return iterationPublished; }
-
-void ThreadedWorkerShared::wakeWhenCalcs(int needed)
-{ wakeWhenReaches(iterationCalced, needed, calcedMutex, calcedCond); }
-
-void ThreadedWorkerShared::wakeWhenPublishes(int needed)
-{ wakeWhenReaches(iterationPublished, needed, publishMutex, publishCond); }
-
-void ThreadedWorkerShared::incIterationCalced()
-{
-    // debug() << "worker finished calcing iteration" << getIterationCalced() + 1;
-    incAndWakeAll(iterationCalced, calcedMutex, calcedCond);
+    iterationCalced[0] = iterationCalced[1] = 0;
+    iterationPublished[0] = iterationPublished[1] = 0;
 }
 
-void ThreadedWorkerShared::incIterationPublished()
+int ThreadedWorkerShared::getIterationCalced(bool south) const
 {
-    // debug() << "worker publishing iteration " << getIterationPublished() + 1;
-    incAndWakeAll(iterationPublished, publishMutex, publishCond);
+    return iterationCalced[south];
 }
 
+int ThreadedWorkerShared::getIterationPublished(bool south) const
+{
+    return iterationPublished[south];
+}
+
+int ThreadedWorkerShared::getIterationCompleted() const
+{
+    return max(getIterationPublished(0), getIterationPublished(1));
+}
+
+void ThreadedWorkerShared::wake()
+{
+    sem.post();
+}
+
+void ThreadedWorkerShared::incIterationCalced(bool south)
+{
+    ++iterationCalced[south];
+}
+
+void ThreadedWorkerShared::incIterationPublished(bool south)
+{
+    ++iterationPublished[south];
+}
+
+void ThreadedWorkerShared::sleep()
+{
+    sem.wait();
+}
 
 
 void ThreadedWorker::start(
@@ -83,25 +76,63 @@ void ThreadedWorker::run()
     TileView innerTemp = tempDomain.getInner();
     Borders tempBorders = tempDomain.getBorders();
 
-    size_t nsz = neighShared.size();
-
-    debug("worker ready to calc");
-    while (manager->wakeWhenNextIterationNeeded(myShared.iterationPublished))
+    debug() << "worker ready to calc";
+    while (manager->wakeWhenNextIterationNeeded(myShared.getIterationCompleted()))
     {
+        int myIter = myShared.getIterationCompleted();
+
         makeIteration(innerResult, innerTemp);
+        makeIteration(resultBorders[SIDE_W], tempBorders[SIDE_W]);
+        makeIteration(resultBorders[SIDE_E], tempBorders[SIDE_E]);
 
-        for (size_t i = 0; i < nsz; ++i)
-            neighShared[i]->wakeWhenPublishes(myShared.iterationPublished);
+        debug() << "calced inners for iter " << myIter << "->" << myIter+1
+            << ": " << innerResult.getWindow();
 
-        for (size_t i = 0; i < SIDE_COUNT; ++i)
-            makeIteration(resultBorders[i], tempBorders[i]);
+        bool has[2] = {false, false};
+        static const int neighSides[2] = {SIDE_N, SIDE_S};
+        for (bool first = true; !has[0] || !has[1]; first = false)
+        {
+            if (!first)
+                myShared.sleep();
+            for (int i = 0; i < 2; ++i)
+                if (!has[i] && neighShared[i]->getIterationPublished(1-i) == myIter
+                    && (h > 1 || neighShared[1-i]->getIterationPublished(i) == myIter))
+                {
+                    has[i] = true;
+                    makeIteration(
+                            resultBorders[neighSides[i]],
+                            tempBorders[neighSides[i]]);
+                    debug() << "calced side " << i
+                        << " for iter " << myIter << "->" << myIter+1
+                        << ": " << resultBorders[neighSides[i]].getWindow();
+                    myShared.incIterationCalced(i);
+                    neighShared[i]->wake();
+                }
+        }
 
-        myShared.incIterationCalced();
-        for (size_t i = 0; i < nsz; ++i)
-            neighShared[i]->wakeWhenCalcs(myShared.iterationCalced);
+        innerResult.copyValues(innerTemp);
+        resultBorders[SIDE_W].copyValues(tempBorders[SIDE_W]);
+        resultBorders[SIDE_E].copyValues(tempBorders[SIDE_E]);
 
-        domain->copyValues(tempDomain);
-        myShared.incIterationPublished();
+        debug() << "published inners " << myIter << "->" << myIter+1;
+
+        bool copied[2] = {false, false};
+        for (bool first = true; !copied[0] || !copied[1]; first = false)
+        {
+            if (!first)
+                myShared.sleep();
+            for (int i = 0; i < 2; ++i)
+                if (!copied[i] && neighShared[i]->getIterationCalced(1-i) == myIter+1
+                    && (h > 1 || neighShared[1-i]->getIterationCalced(i) == myIter+1))
+                {
+                    copied[i] = true;
+                    resultBorders[neighSides[i]]
+                        .copyValues(tempBorders[neighSides[i]]);
+                    debug() << "published side " << i << myIter << "->" << myIter+1;
+                    myShared.incIterationPublished(i);
+                    neighShared[i]->wake();
+                }
+        }
     }
 
     debug("worker stopped");

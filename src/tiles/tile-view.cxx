@@ -49,6 +49,11 @@ TileView TileView::makeSlice(const CoordRect& reg)
     return TileView(*viewed, reg.shifted(window.r1, window.c1));
 }
 
+CoordRect TileView::getWindow() const
+{
+    return window;
+}
+
 
 TorusView::TorusView(AbstractTile& viewed):
     TileView(viewed)

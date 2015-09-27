@@ -18,24 +18,25 @@ class ThreadedWorkerShared
 public:
     ThreadedWorkerShared();
 
-    int getIterationCalced() const;
-    int getIterationPublished() const;
+    int getIterationCalced(bool south) const;
+    int getIterationPublished(bool south) const;
+    int getIterationCompleted() const;
 
-    void wakeWhenCalcs(int iteration);
-    void wakeWhenPublishes(int iteration);
+    void wake();
+
+protected:
+    void incIterationCalced(bool south);
+    void incIterationPublished(bool south);
+
+    void sleep();
 
 private:
     friend class ThreadedWorker;
 
-    void incIterationCalced();
-    int iterationCalced;
-    Mutex calcedMutex;
-    Cond calcedCond;
+    int iterationCalced[2];
+    int iterationPublished[2];
 
-    void incIterationPublished();
-    int iterationPublished;
-    Mutex publishMutex;
-    Cond publishCond;
+    Semaphore sem;
 };
 
 class ThreadedWorker : public Thread, protected Worker

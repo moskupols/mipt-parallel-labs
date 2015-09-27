@@ -2,6 +2,7 @@
 #define TILES_UTILS_HXX_INCLUDED
 
 #include <cstddef>
+#include <iostream>
 
 namespace game_of_life
 {
@@ -51,4 +52,10 @@ static const int DIRECTION[DIRECTION_COUNT][2] =
 };
 
 }
+
+namespace std
+{
+ostream& operator<<(ostream& out, const game_of_life::CoordRect& r);
+}
+
 #endif

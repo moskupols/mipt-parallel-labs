@@ -1,6 +1,7 @@
 #include <memory>
 #include <cassert>
 #include <cstdlib>
+#include <algorithm>
 
 #include "threaded-manager.hxx"
 #include "threaded-worker.hxx"
@@ -148,6 +149,7 @@ void ThreadedManager::updateState()
 void ThreadedManager::run()
 {
     debug("initializing workers");
+    concurrency = min(concurrency, (int)matrix->getHeight());
     getShared().setWorkersCount(concurrency);
 
     UniqueArray<ThreadedWorker> workers(concurrency);
@@ -156,7 +158,6 @@ void ThreadedManager::run()
     vector<std::vector<int> > neigs;
     try
     {
-
         std::vector<CoordRect> domainRects = chooseDomains(torus, concurrency);
         for (int i = 0; i < concurrency; ++i)
             domains.push_back(TileView(torus, domainRects[i]));
@@ -169,6 +170,19 @@ void ThreadedManager::run()
             for (size_t j = 0; j < neigs[i].size(); ++j)
                 shareds[j] = &workers[neigs[i][j]].getShared();
             workers[i].start(myShared, domains[i], shareds);
+        }
+
+        {
+            auto d = debug();
+            d << "Workers scheme:\n";
+            for (size_t i = 0; i < neigs.size(); ++i)
+            {
+                if (neigs[i].empty())
+                    continue;
+                d << "\t" << workers[neigs[i][0]].getId() << "\n";
+                d << workers[i].getId() << " " << domainRects[i] << "\n";
+                d << "\t" << workers[neigs[i][1]].getId() << "\n";
+            }
         }
     }
     catch (exception& e)
@@ -231,12 +245,15 @@ void ThreadedManager::run()
             for (int i = 0; i < concurrency; ++i)
             {
                 int newStop = std::min(stop,
-                        workers[i].getShared().getIterationPublished() + 1);
+                        workers[i].getShared().getIterationCompleted() + 1);
                 if (newStop > myShared.stop)
                     myShared.setStop(newStop);
             }
-            for (int i = 0; i < concurrency; ++i)
-                workers[i].getShared().wakeWhenPublishes(myShared.stop);
+            {
+                MutexLocker locker(mutex);
+                while (!this->updateFlag)
+                    cond.wait(mutex);
+            }
             stop = myShared.stop;
             setState(STOPPED);
         }
@@ -255,7 +272,7 @@ void ThreadedManager::run()
             {
                 bool over = true;
                 for (int i = 0; i < concurrency; ++i)
-                    over &= workers[i].getShared().getIterationPublished() == stop;
+                    over &= workers[i].getShared().getIterationCompleted() == stop;
                 if (over)
                     setState(STOPPED);
             }

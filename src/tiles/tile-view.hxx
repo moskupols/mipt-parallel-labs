@@ -24,6 +24,8 @@ public:
 
     TileView makeSlice(const CoordRect& reg);
 
+    CoordRect getWindow() const;
+
 private:
     AbstractTile* viewed;
     CoordRect window;
