@@ -40,8 +40,6 @@ public:
 protected:
     void setState(State s);
 
-    void start();
-
 private:
     State s;
     mutable Mutex stateMutex;

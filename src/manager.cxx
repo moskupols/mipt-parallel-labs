@@ -93,10 +93,5 @@ void Manager::setState(State s)
     stateCond.wakeAll();
 }
 
-void Manager::start()
-{
-    Thread::start();
-}
-
 } // namespace game_of_life
 
