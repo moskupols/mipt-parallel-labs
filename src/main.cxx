@@ -8,11 +8,14 @@
 #include <cstdlib>
 
 #include "output.hxx"
-#include "threaded-manager.hxx"
 #include "tile.hxx"
 #include "exceptions.hxx"
 
+#include "mpi/mpi.hxx"
+#include "mpi/mpi-manager.hxx"
+
 using namespace game_of_life;
+using namespace mpi;
 
 using std::vector;
 using std::string;
@@ -54,7 +57,7 @@ int toInt(const string &s)
     return ret;
 }
 
-ThreadedManager manager;
+MpiManager manager;
 Matrix matrix;
 
 typedef const vector<string>& Params;
@@ -72,7 +75,7 @@ void start(Params p)
 {
     static const string TAG("START: ");
 
-    if (manager.getState() != ThreadedManager::NOT_STARTED)
+    if (manager.getState() != Manager::NOT_STARTED)
         throw IncorrectCommandException(TAG + "already started");
     checkParamCount(TAG, p, 2, 3);
 
@@ -108,11 +111,10 @@ void start(Params p)
     }
     catch (bad_alloc& e)
     {
-        throw IncorrectCommandException(TAG +
-                "couldn't allocate enough memory");
+        throw IncorrectCommandException(TAG + "couldn't allocate enough memory");
     }
     debug(TAG + "starting the manager");
-    manager.start(matrix, concurrency);
+    manager.start(matrix, Mpi::getWorldComm());
 }
 
 void status(Params p)
@@ -122,15 +124,15 @@ void status(Params p)
 
     Manager::State state = manager.getState();
 
-    OstreamLocker o(out());
+    std::ostream& o(out());
     o << "System state: " << manager.stateStr(state) << "\n";
     if (state != Manager::NOT_STARTED && state != Manager::RUNNING)
     {
-        o << "After iteration " << manager.getShared().getStop() << ":\n";
+        o << "After iteration " << manager.getStop() << ":\n";
         if (matrix.getWidth() * matrix.getHeight() > 1000)
             o << "<matrix is too large to print it>\n";
         else
-            matrix.output(o.get());
+            matrix.output(o);
     }
 }
 
@@ -174,7 +176,7 @@ void stop(Params p)
         manager.pauseAll();
         manager.wakeWhenStateIs(Manager::STOPPED);
         debug(TAG + "awake and stopped");
-        out() << "Stopped at " << manager.getShared().getStop() << "\n";
+        out() << "Stopped at " << manager.getStop() << "\n";
         break;
     default:
         throw IncorrectCommandException(TAG + "not running");
@@ -215,8 +217,10 @@ void unknownCommand(const string& s)
     throw IncorrectCommandException(string("\"") + s + "\" is not supported ._.");
 }
 
-int main()
+int main(int argc, char** argv)
 {
+    Mpi::init(argc, argv);
+
     map<string, CommandHandler> cmdMap;
     cmdMap["START"] = start;
     cmdMap["STATUS"] = status;
