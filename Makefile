@@ -1,5 +1,6 @@
-CXX := g++-4.4
-CXX := g++
+# CXX := g++-4.4
+# CXX := g++
+CXX = mpic++
 
 DEBUG_OUTPUT := '"debug.log"'
 
@@ -16,7 +17,7 @@ RELEASE_DIR := $(BUILD_DIR)/release
 DEBUG_TARGET := bin/debug
 RELEASE_TARGET := bin/release
 
-SOURCES := $(wildcard src/*.cxx) $(wildcard src/tiles/*.cxx)
+SOURCES := $(wildcard src/*.cxx) $(wildcard src/*/*.cxx)
 
 DEBUG_OBJECTS := $(patsubst src/%.cxx,$(DEBUG_DIR)/%.o,$(SOURCES))
 RELEASE_OBJECTS := $(patsubst src/%.cxx,$(RELEASE_DIR)/%.o,$(SOURCES))
