@@ -3,49 +3,52 @@
 
 #include <iostream>
 #include <string>
-#include "thread.hxx"
-
-typedef ResourceMutex<std::ostream> OstreamMutex;
-
-class OstreamLocker : public ResourceLocker<std::ostream>
-{
-public:
-    OstreamLocker(OstreamMutex& m);
-    OstreamLocker(OstreamLocker&& temp);
-    ~OstreamLocker();
-
-    template<class T>
-    OstreamLocker& operator << (const T& some)
-    {
-        get() << some;
-        return *this;
-    }
-};
 
 #ifdef DEBUG_OUTPUT
-class DebugStreamLocker : public OstreamLocker
+class DebugStreamFlusher
 {
 public:
-    DebugStreamLocker(OstreamMutex& m);
-    DebugStreamLocker(DebugStreamLocker&& temp);
-    ~DebugStreamLocker();
+    explicit DebugStreamFlusher(std::ostream& out);
+    DebugStreamFlusher(DebugStreamFlusher&&);
+    ~DebugStreamFlusher();
+
+    std::ostream& get();
+
+    template<class T>
+    DebugStreamFlusher& operator << (const T& v)
+    {
+        if (out)
+            *out << v;
+        return *this;
+    }
+
+    template<class T>
+    DebugStreamFlusher& operator << (T& v)
+    {
+        if (out)
+            *out << v;
+        return *this;
+    }
+
+private:
+    std::ostream* out;
 };
 #else
-class DebugStreamLocker
+class DebugStreamFlusher
 {
 public:
     template<class T>
-    DebugStreamLocker& operator << (const T&) { return *this; }
+    DebugStreamFlusher& operator << (const T&) { return *this; }
+    template<class T>
+    DebugStreamFlusher& operator << (T&) { return *this; }
+
+    std::ostream& get();
 };
 #endif
 
-extern OstreamMutex coutMutex;
-extern OstreamMutex cerrMutex;
-extern OstreamMutex debugMutex;
-
-OstreamLocker out();
-OstreamLocker err();
-DebugStreamLocker debug();
+std::ostream& out();
+std::ostream& err();
+DebugStreamFlusher debug();
 
 void out(const std::string&);
 void err(const std::string&);

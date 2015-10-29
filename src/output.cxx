@@ -6,53 +6,47 @@
 
 using namespace std;
 
-OstreamLocker::OstreamLocker(OstreamMutex& m):
-    ResourceLocker<std::ostream>(m)
-{}
-
-OstreamLocker::OstreamLocker(OstreamLocker&& temp):
-    ResourceLocker<std::ostream>(std::move(temp))
-{}
-
-OstreamLocker::~OstreamLocker()
-{
-    if (isValid())
-        get().flush();
-}
-
-#ifdef DEBUG_OUTPUT
-DebugStreamLocker::DebugStreamLocker(OstreamMutex& m):
-    OstreamLocker(m)
-{
-    get() << "Thread " << Thread::getCurrentId() << ": ";
-}
-DebugStreamLocker::DebugStreamLocker(DebugStreamLocker&& temp):
-    OstreamLocker(std::move(temp))
-{}
-
-DebugStreamLocker::~DebugStreamLocker()
-{
-    if (isValid())
-        get() << "\n";
-}
-#endif
-
-OstreamMutex coutMutex(cout);
-OstreamMutex cerrMutex(cerr);
-
 #ifdef DEBUG_OUTPUT
 static ofstream dout(DEBUG_OUTPUT, fstream::out | fstream::app);
 #else
 static ostringstream dout;
 #endif
-OstreamMutex debugMutex(dout);
 
-OstreamLocker out() { return OstreamLocker(coutMutex); }
-OstreamLocker err() { return OstreamLocker(cerrMutex); }
 #ifdef DEBUG_OUTPUT
-DebugStreamLocker debug() { return DebugStreamLocker(debugMutex); }
+DebugStreamFlusher::DebugStreamFlusher(ostream& m):
+    out(&m)
+{
+    *out << "Thread " << Thread::getCurrentId() << ": ";
+}
+DebugStreamFlusher::DebugStreamFlusher(DebugStreamFlusher&& temp):
+    out(temp.out)
+{
+    temp.out = nullptr;
+}
+
+DebugStreamFlusher::~DebugStreamFlusher()
+{
+    if (out)
+        *out << "\n";
+}
+
+ostream& DebugStreamFlusher::get()
+{
+    return *out;
+}
 #else
-DebugStreamLocker debug() { return DebugStreamLocker(); }
+ostream& DebugStreamFlusher::get()
+{
+    return dout;
+}
+#endif
+
+std::ostream& out() { return cout; }
+std::ostream& err() { return cerr; }
+#ifdef DEBUG_OUTPUT
+DebugStreamFlusher debug() { return DebugStreamFlusher(dout); }
+#else
+DebugStreamFlusher debug() { return DebugStreamFlusher(); }
 #endif
 
 void out(const string& s) { out() << s; }
