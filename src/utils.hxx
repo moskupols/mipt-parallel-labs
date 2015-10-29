@@ -3,14 +3,26 @@
 
 #include <cassert>
 
-class Noncopyable
+class NonCopyAssignable
+{
+protected:
+    NonCopyAssignable() {}
+private:
+    void operator=(const NonCopyAssignable&);
+};
+
+class NonCopyConstructible
+{
+protected:
+    NonCopyConstructible() {}
+private:
+    NonCopyConstructible(const NonCopyConstructible&);
+};
+
+class Noncopyable : NonCopyAssignable, NonCopyConstructible
 {
 protected:
     Noncopyable() {}
-
-private:
-    Noncopyable(const Noncopyable&);
-    void operator=(const Noncopyable&);
 };
 
 template<class T>
