@@ -37,11 +37,11 @@ typedef Border* Borders;
 enum Side
 {
     SIDE_N = 0,
-    SIDE_E = 1,
-    SIDE_S = 2,
-    SIDE_W = 3
+    SIDE_S = 1,
+    // SIDE_E = 1,
+    // SIDE_W = 3
 };
-static const size_t SIDE_COUNT = SIDE_W + 1;
+static const size_t SIDE_COUNT = SIDE_S + 1;
 
 static const size_t DIRECTION_COUNT = 8;
 static const int DIRECTION[DIRECTION_COUNT][2] =

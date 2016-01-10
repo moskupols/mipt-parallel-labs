@@ -36,8 +36,8 @@ CoordRect AbstractTile::getBorderRect(Side s) const
     switch (s)
     {
     case SIDE_N: return CoordRect(0,   0,   1,   w);
-    case SIDE_W: return CoordRect(1,   0,   h-1, 1);
-    case SIDE_E: return CoordRect(1,   w-1, h-1, w);
+    // case SIDE_W: return CoordRect(1,   0,   h-1, 1);
+    // case SIDE_E: return CoordRect(1,   w-1, h-1, w);
     case SIDE_S: return CoordRect(h-1, 0,   h,   w);
     }
     throw std::logic_error("unusual side");
@@ -45,7 +45,7 @@ CoordRect AbstractTile::getBorderRect(Side s) const
 
 CoordRect AbstractTile::getInnerRect() const
 {
-    return CoordRect(1, 1, (coord_t)getHeight()-1, (coord_t)getWidth()-1);
+    return CoordRect(1, 0, (coord_t)getHeight()-1, (coord_t)getWidth());
 }
 
 Borders AbstractTile::getBorders()
