@@ -29,15 +29,27 @@ static const MPI_Datatype value;
 class MpiCommunicator
 {
 public:
+    MpiCommunicator();
+
     int getSize() const;
     int getRank() const;
 
     void abort(int error=0);
 
     template<typename T>
+    void broadcast(T* start, int count, int root)
+    {
+        impl::throwOnFail(
+                MPI_Bcast(
+                    start, count, impl::DatatypeMatcher<T>::value,
+                    root,
+                    comm));
+    }
+
+    template<typename T>
     void send(T* start, int count, int receiver, int tag)
     {
-        throwOnFail(
+        impl::throwOnFail(
                 MPI_Send(
                     start, count, impl::DatatypeMatcher<T>::value,
                     receiver, tag,
@@ -48,7 +60,7 @@ public:
     MpiStatus receive(T* start, int count, int sender, int tag)
     {
         MpiStatus ret;
-        throwOnFail(
+        impl::throwOnFail(
                 MPI_Recv(
                     start, count, impl::DatatypeMatcher<T>::value,
                     sender, tag, comm,

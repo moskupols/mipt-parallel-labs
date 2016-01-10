@@ -21,6 +21,7 @@ void throwOnFail(int resultCode)
 #define MAKE_MATCHER(type, datatype) \
 template<> const MPI_Datatype DatatypeMatcher<type>::value = datatype;
 
+MAKE_MATCHER(bool,               MPI_CHAR)
 MAKE_MATCHER(signed char,        MPI_CHAR)
 MAKE_MATCHER(signed short int,   MPI_SHORT)
 MAKE_MATCHER(signed int,         MPI_INT)
@@ -33,6 +34,10 @@ MAKE_MATCHER(double,             MPI_DOUBLE)
 MAKE_MATCHER(long double,        MPI_LONG_DOUBLE)
 
 #undef MAKE_MATCHER
+}
+
+MpiCommunicator::MpiCommunicator()
+{
 }
 
 int MpiCommunicator::getSize() const

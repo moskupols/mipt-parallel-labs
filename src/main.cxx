@@ -114,7 +114,7 @@ void start(Params p)
         throw IncorrectCommandException(TAG + "couldn't allocate enough memory");
     }
     debug(TAG + "starting the manager");
-    manager.start(matrix, Mpi::getWorldComm());
+    manager.start(matrix, Mpi::getWorldComm(), concurrency);
 }
 
 void status(Params p)

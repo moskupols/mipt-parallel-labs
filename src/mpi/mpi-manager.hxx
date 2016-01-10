@@ -14,7 +14,7 @@ class MpiManager : public Manager
 public:
     MpiManager();
 
-    void start(AbstractTile& tile, mpi::MpiCommunicator comm);
+    void start(AbstractTile& tile, mpi::MpiCommunicator comm, unsigned workerCount);
     void runForMore(int runs);
     void pauseAll();
     void shutdown();
@@ -23,6 +23,11 @@ public:
 
 protected:
     void run();
+
+private:
+    AbstractTile* cleanTile;
+    mpi::MpiCommunicator globalComm;
+    unsigned workerCount;
 };
 
 }

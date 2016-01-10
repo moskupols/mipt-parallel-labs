@@ -25,8 +25,7 @@ vector<CoordRect> Manager::chooseDomains(const AbstractTile& t, int parts)
     return ret;
 }
 
-vector<vector<int> > Manager::makeNeighbors(
-        const TorusView&, const vector<CoordRect>& r)
+vector<vector<int> > Manager::makeNeighbors(const vector<CoordRect>& r)
 {
     int n = r.size();
     vector<vector<int> > ret(n);

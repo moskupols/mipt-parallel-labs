@@ -59,6 +59,11 @@ size_t Matrix::getWidth() const { return width; }
 bool Matrix::at(coord_t r, coord_t c) const { return data[r * getWidth() + c]; }
 void Matrix::set(coord_t r, coord_t c, bool v) { data[r * getWidth() + c] = v; }
 
+bool* Matrix::getData()
+{
+    return data;
+}
+
 Matrix Matrix::fromCsv(std::istream& in)
 {
     vector<pair<int, int>> alive;

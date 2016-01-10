@@ -26,6 +26,8 @@ public:
     bool at(coord_t r, coord_t c) const;
     void set(coord_t r, coord_t c, bool v);
 
+    bool* getData();
+
     static Matrix fromCsv(std::istream& csv);
     static Matrix random(size_t height, size_t width, int seed);
 
