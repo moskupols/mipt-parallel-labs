@@ -27,6 +27,7 @@ public:
     CoordRect getWindow() const;
 
     AbstractTile& getViewed();
+    const AbstractTile& getViewed() const;
 
 private:
     AbstractTile* viewed;
@@ -46,6 +47,23 @@ public:
     coord_t normalizeColumn(coord_t c) const;
 protected:
     static coord_t normalizeCoord(coord_t c, coord_t dimen);
+};
+
+class FrameView : public TorusView
+{
+public:
+    FrameView(AbstractTile& center, AbstractTile& top, AbstractTile& bottom);
+
+    bool at(coord_t r, coord_t c) const;
+    void set(coord_t r, coord_t c, bool v);
+
+    coord_t normalizeRowForPart(coord_t r) const;
+    const AbstractTile& getPartAt(coord_t r, coord_t c) const;
+    AbstractTile& getPartAt(coord_t r, coord_t c);
+
+private:
+    AbstractTile *top;
+    AbstractTile *bottom;
 };
 
 }

@@ -1,5 +1,7 @@
 #include "tile-view.hxx"
 
+#include <cassert>
+
 namespace game_of_life
 {
 
@@ -59,6 +61,11 @@ AbstractTile& TileView::getViewed()
     return *viewed;
 }
 
+const AbstractTile& TileView::getViewed() const
+{
+    return *viewed;
+}
+
 
 TorusView::TorusView(AbstractTile& viewed):
     TileView(viewed)
@@ -82,5 +89,53 @@ coord_t TorusView::normalizeColumn(coord_t c) const
 
 coord_t TorusView::normalizeCoord(coord_t c, coord_t dimen)
 { return ((c % dimen) + dimen) % dimen; }
+
+
+
+FrameView::FrameView(AbstractTile& center, AbstractTile& top, AbstractTile& bottom):
+    TorusView(center),
+    top(&top),
+    bottom(&bottom)
+{
+    assert(top.getHeight() == 1);
+    assert(bottom.getHeight() == 1);
+}
+
+bool FrameView::at(coord_t r, coord_t c) const
+{
+    return getPartAt(r, c)
+        .at(normalizeRowForPart(r), normalizeColumn(c));
+}
+
+void FrameView::set(coord_t r, coord_t c, bool v)
+{
+    getPartAt(r, c)
+        .set(normalizeRowForPart(r), normalizeColumn(c), v);
+}
+
+coord_t FrameView::normalizeRowForPart(coord_t r) const
+{
+    if (r >= 0 && r < (coord_t)getHeight())
+        return r;
+    return 0;
+}
+
+const AbstractTile& FrameView::getPartAt(coord_t r, coord_t) const
+{
+    if (r == -1)
+        return *top;
+    if (r == (coord_t)getHeight())
+        return *bottom;
+    return getViewed();
+}
+
+AbstractTile& FrameView::getPartAt(coord_t r, coord_t)
+{
+    if (r == -1)
+        return *top;
+    if (r == (coord_t)getHeight())
+        return *bottom;
+    return getViewed();
+}
 
 }
