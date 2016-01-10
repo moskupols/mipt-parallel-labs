@@ -54,6 +54,11 @@ CoordRect TileView::getWindow() const
     return window;
 }
 
+AbstractTile& TileView::getViewed()
+{
+    return *viewed;
+}
+
 
 TorusView::TorusView(AbstractTile& viewed):
     TileView(viewed)

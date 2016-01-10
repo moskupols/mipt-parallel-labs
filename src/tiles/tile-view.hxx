@@ -26,6 +26,8 @@ public:
 
     CoordRect getWindow() const;
 
+    AbstractTile& getViewed();
+
 private:
     AbstractTile* viewed;
     CoordRect window;
