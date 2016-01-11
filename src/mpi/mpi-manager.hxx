@@ -5,6 +5,8 @@
 #include "../manager.hxx"
 #include "../tiles/matrix.hxx"
 
+#include <vector>
+
 namespace game_of_life
 {
 
@@ -28,6 +30,7 @@ private:
     Matrix workMatrix;
     mpi::MpiCommunicator globalComm, comm;
     unsigned workerCount;
+    std::vector<bool*> domainBoundaries;
 
     int stop;
 };

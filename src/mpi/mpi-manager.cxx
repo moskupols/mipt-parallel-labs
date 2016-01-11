@@ -48,7 +48,6 @@ void MpiManager::start(
 
     debug("worker count broadcasted");
 
-    vector<bool*> domainBoundaries;
     for (unsigned i = 0; i < workerCount; ++i)
         domainBoundaries.push_back(
                 workMatrix.getData() + domains[i].r1 * workMatrix.getWidth());
@@ -84,8 +83,8 @@ void MpiManager::pauseAll()
     comm.asyncBroadcast(msg, 2, 0).wait();
     int maxIter = 0;
     comm.allreduce(MPI_IN_PLACE, &maxIter, 1, MPI_MAX);
+    assert(maxIter <= stop);
     stop = maxIter;
-    // ??
 }
 
 void MpiManager::shutdown()
@@ -111,7 +110,13 @@ void MpiManager::updateStatus()
     if (minIter == stop)
     {
         setState(STOPPED);
-        // TODO gather
+        for (unsigned i = 0; i < workerCount; ++i)
+        {
+            bool* cur = domainBoundaries[i];
+            bool* next = domainBoundaries[i+1];
+            comm.receive(cur, next-cur, i+1, 0);
+        }
+        cleanTile->copyValues(workMatrix);
     }
     else
         setState(RUNNING);

@@ -64,12 +64,10 @@ Matrix& Matrix::operator=(Matrix&& m)
 {
     height = m.height;
     width = m.width;
-    swap(data, m.data);
-    if (m.data)
-    {
-        delete[] m.data;
-        m.data = NULL;
-    }
+    if (data)
+        delete[] data;
+    data = m.data;
+    m.data = NULL;
     return *this;
 }
 

@@ -82,6 +82,8 @@ void MpiWorker::loop()
     {
         if (bordersNotCalced == 0 && iterCompleted < stopper)
             startIteration();
+        else if (iterCompleted == stopper)
+            debug() << "reached stopper " << stopper << " so not calculating";
 
         indCount = MpiRequest::waitSome(3, requests, indices);
         std::sort(indices, indices + indCount);
@@ -106,7 +108,7 @@ void MpiWorker::processMessage(MsgType type, int msgArg)
     debug() << "got broadcasted message " << (int)type;
     switch (type)
     {
-    case MsgType::UPDATE_STOPPER: stopper += msgArg; break;
+    case MsgType::UPDATE_STOPPER: stopper = msgArg; break;
     case MsgType::STOP: stop(); break;
     case MsgType::SHUTDOWN: return shutdown();
     case MsgType::UPDATE_STATUS: updateStatus(); break;
@@ -138,6 +140,7 @@ void MpiWorker::calcBorder(int b)
     makeIteration(borders[b], tempBorders[b]);
     if (!--bordersNotCalced)
         finishIteration();
+    assert(bordersNotCalced >= 0);
 }
 
 void MpiWorker::finishIteration()
@@ -156,7 +159,10 @@ void MpiWorker::updateStatus()
 {
     int minIter;
     comm.allreduce(&iterCompleted, &minIter, 1, MPI_MIN);
-    // TODO gather
+    if (minIter == stopper)
+        comm.send(workMatrix.getData(),
+                workMatrix.getWidth() * workMatrix.getHeight(),
+                0, 0);
 }
 
 void MpiWorker::run(MpiCommunicator comm_)
