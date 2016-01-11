@@ -18,8 +18,8 @@ public:
     Matrix(Matrix&& temp);
     ~Matrix();
 
-    void operator=(const Matrix& m);
-    void operator=(Matrix&& m);
+    Matrix& operator=(const Matrix& m);
+    Matrix& operator=(Matrix&& m);
 
     size_t getHeight() const;
     size_t getWidth() const;

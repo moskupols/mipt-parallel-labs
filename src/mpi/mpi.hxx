@@ -29,12 +29,16 @@ static const MPI_Datatype value;
 class MpiRequest
 {
 public:
+    MpiRequest();
     explicit MpiRequest(MPI_Request r);
 
     bool test();
     void wait();
+    bool isPending();
 
-// private:
+    static int waitSome(int inCount, MpiRequest* in, int* out);
+
+private:
     MPI_Request r;
 };
 
@@ -111,6 +115,17 @@ public:
         return ret;
     }
 
+    template<typename T>
+    MpiRequest asyncReceive(T* start, int count, int sender, int tag)
+    {
+        MPI_Request ret;
+        impl::throwOnFail(
+                MPI_Irecv(
+                    start, count, impl::DatatypeMatcher<T>::value,
+                    sender, tag, comm, &ret));
+        return MpiRequest(ret);
+    }
+
     MpiCommunicator& operator=(const MpiCommunicator&that);
 
 protected:
@@ -132,9 +147,12 @@ public:
 
     static MpiCommunicator getWorldComm();
 
+    static bool isFinalized();
+
 private:
     static bool instantiated;
     static bool initialized;
+    static bool finalized;
 };
 
 extern Mpi mpi;

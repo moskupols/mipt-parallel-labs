@@ -46,9 +46,9 @@ Matrix::~Matrix()
         delete[] data;
 }
 
-void Matrix::operator=(const Matrix& m)
+Matrix& Matrix::operator=(const Matrix& m)
 {
-    if (width * height != m.width * m.height)
+    if (data == NULL || width * height != m.width * m.height)
     {
         width = m.width;
         height = m.height;
@@ -57,13 +57,20 @@ void Matrix::operator=(const Matrix& m)
         data = new bool[width * height];
     }
     memcpy(data, m.data, height * width * sizeof(data[0]));
+    return *this;
 }
 
-void Matrix::operator=(Matrix&& m)
+Matrix& Matrix::operator=(Matrix&& m)
 {
     height = m.height;
     width = m.width;
     swap(data, m.data);
+    if (m.data)
+    {
+        delete[] m.data;
+        m.data = NULL;
+    }
+    return *this;
 }
 
 size_t Matrix::getHeight() const { return height; }

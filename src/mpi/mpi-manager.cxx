@@ -100,6 +100,9 @@ void MpiManager::shutdown()
 
 void MpiManager::updateStatus()
 {
+    if (getState() == NOT_STARTED)
+        return;
+
     int msg[2] = {static_cast<int>(MsgType::UPDATE_STATUS), stop};
     debug("broadcasting update");
     comm.asyncBroadcast(msg, 2, 0).wait();

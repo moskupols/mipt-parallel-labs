@@ -16,7 +16,10 @@ static ostringstream dout;
 DebugStreamFlusher::DebugStreamFlusher(ostream& m):
     out(&m)
 {
-    *out << "Rank " << mpi::Mpi::getWorldComm().getRank() << ": ";
+    if (mpi::Mpi::isFinalized())
+        *out << "Rank #: ";
+    else
+        *out << "Rank " << mpi::Mpi::getWorldComm().getRank() << ": ";
 }
 DebugStreamFlusher::DebugStreamFlusher(DebugStreamFlusher&& temp):
     out(temp.out)

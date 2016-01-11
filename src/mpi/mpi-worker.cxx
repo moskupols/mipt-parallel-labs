@@ -6,6 +6,8 @@
 
 #include "../output.hxx"
 
+#include <algorithm>
+
 using namespace mpi;
 
 namespace
@@ -17,52 +19,17 @@ namespace game_of_life
 
 MpiWorker::MpiWorker():
     stopper(0),
-    iterCompleted(0)
+    iterCompleted(0),
+    broadcastReq(requests[2])
 {}
-
-void MpiWorker::makeIteration()
-{
-    assert(iterCompleted < stopper);
-    MpiRequest topReq =
-        comm.asyncSend(workMatrix.getData(), workMatrix.getWidth(), topNeigh, 0);
-    MpiRequest bottomReq =
-        comm.asyncSend(
-                workMatrix.getData() + workMatrix.getWidth() * (workMatrix.getHeight()-1),
-                workMatrix.getWidth(), bottomNeigh, 0);
-
-    comm.receive(topLine.getData(), topLine.getWidth(), topNeigh, 0);
-    comm.receive(bottomLine.getData(), bottomLine.getWidth(), bottomNeigh, 0);
-
-    Worker::makeIteration(workWindow, tempWorkMatrix);
-    std::swap(workMatrix, tempWorkMatrix);
-
-    topReq.wait();
-    bottomReq.wait();
-
-    ++iterCompleted;
-}
-
-void MpiWorker::stop()
-{
-    comm.allreduce(&iterCompleted, &stopper, 1, MPI_MAX);
-}
-
-void MpiWorker::updateStatus()
-{
-    int minIter;
-    comm.allreduce(&iterCompleted, &minIter, 1, MPI_MIN);
-    // TODO gather
-}
 
 void MpiWorker::shutdown()
 {
     comm.barrier();
 }
 
-void MpiWorker::run(MpiCommunicator comm_)
+bool MpiWorker::initialize()
 {
-    comm = comm_;
-
     int me = comm.getRank();
     assert(me);
 
@@ -72,7 +39,8 @@ void MpiWorker::run(MpiCommunicator comm_)
     if (me > (int)workerCount)
     {
         comm.split(MPI_UNDEFINED);
-        return;
+        debug("nothing to do here");
+        return false;
     }
     comm = comm.split(0);
 
@@ -84,54 +52,119 @@ void MpiWorker::run(MpiCommunicator comm_)
     debug("receiving the initial matrix");
     comm.receive(workMatrix.getData(), sz[0]*sz[1], 0, 0);
 
-    topLine = Matrix{1, sz[1]};
-    bottomLine = Matrix{1, sz[1]};
-    frame = FrameView{workMatrix, topLine, bottomLine};
-    workWindow = frame.getInner();
+    neighLines[0] = neighLines[1] = Matrix{1, sz[1]};
+    frame = FrameView {workMatrix, neighLines[0], neighLines[1]};
 
-    topNeigh = (me + workerCount - 2) % workerCount + 1;
-    bottomNeigh = me % workerCount + 1;
+    borders = frame.getBorders();
+    inner = frame.getInner();
+
+    tempBorders = tempWorkMatrix.getBorders();
+    tempInner = tempWorkMatrix.getInner();
+
+    neighs[0] = (me + workerCount - 2) % workerCount + 1;
+    neighs[1] = me % workerCount + 1;
 
     iterCompleted = stopper = 0;
 
     debug("finished initialization, ready to go");
+    bordersNotCalced = 0;
 
+    return true;
+}
+
+void MpiWorker::loop()
+{
     int msgBuf[2] = {-1, -1};
-    MpiRequest req = comm.asyncBroadcast(msgBuf, 2, 0);
+    broadcastReq = comm.asyncBroadcast(msgBuf, 2, 0);
+    int indices[3];
+    int indCount;
     while (true)
     {
-        bool gotMessage;
-        if (iterCompleted >= stopper)
+        if (bordersNotCalced == 0 && iterCompleted < stopper)
+            startIteration();
+
+        indCount = MpiRequest::waitSome(3, requests, indices);
+        std::sort(indices, indices + indCount);
+        for (int i = indCount-1; i >= 0; --i)
         {
-            debug() << "reached stopper " << stopper << ", waiting for broadcast";
-            req.wait();
-            gotMessage = true;
+            if (indices[i] == 2)
+            {
+                MsgType type = static_cast<MsgType>(msgBuf[0]);
+                processMessage(type, msgBuf[1]);
+                broadcastReq = comm.asyncBroadcast(msgBuf, 2, 0);
+                if (type == MsgType::SHUTDOWN)
+                    return;
+            }
+            else
+                calcBorder(indices[i]);
         }
-        else
-            gotMessage = req.test();
-
-        if (!gotMessage)
-        {
-            makeIteration();
-            continue;
-        }
-        debug() << "got broadcasted message " << msgBuf[0];
-
-        MsgType type = static_cast<MsgType>(msgBuf[0]);
-        int msgArg = msgBuf[1];
-
-        switch (type)
-        {
-        case MsgType::UPDATE_STOPPER: stopper += msgArg; break;
-        case MsgType::STOP: stop(); break;
-        case MsgType::SHUTDOWN: return shutdown();
-        case MsgType::UPDATE_STATUS: updateStatus(); break;
-        default:
-            assert(false);
-        }
-
-        req = comm.asyncBroadcast(msgBuf, 2, 0);
     }
+}
+
+void MpiWorker::processMessage(MsgType type, int msgArg)
+{
+    debug() << "got broadcasted message " << (int)type;
+    switch (type)
+    {
+    case MsgType::UPDATE_STOPPER: stopper += msgArg; break;
+    case MsgType::STOP: stop(); break;
+    case MsgType::SHUTDOWN: return shutdown();
+    case MsgType::UPDATE_STATUS: updateStatus(); break;
+    default:
+        assert(false);
+    }
+}
+
+void MpiWorker::startIteration()
+{
+    assert(iterCompleted < stopper);
+
+    bool* data = workMatrix.getData();
+    size_t width = workMatrix.getWidth();
+    bool* starts[2] = {data, data + width * (workMatrix.getHeight()-1)};
+
+    for (int i = 0; i < 2; ++i)
+    {
+        comm.asyncSend(starts[i], width, neighs[i], 0);
+        requests[i] = comm.asyncReceive(neighLines[i].getData(), width, neighs[i], 0);
+    }
+
+    makeIteration(inner, tempInner);
+    bordersNotCalced = 2;
+}
+
+void MpiWorker::calcBorder(int b)
+{
+    makeIteration(borders[b], tempBorders[b]);
+    if (!--bordersNotCalced)
+        finishIteration();
+}
+
+void MpiWorker::finishIteration()
+{
+    std::swap(workMatrix, tempWorkMatrix);
+    ++iterCompleted;
+}
+
+void MpiWorker::stop()
+{
+    int nextIter = std::min(stopper, iterCompleted);
+    comm.allreduce(&nextIter, &stopper, 1, MPI_MAX);
+}
+
+void MpiWorker::updateStatus()
+{
+    int minIter;
+    comm.allreduce(&iterCompleted, &minIter, 1, MPI_MIN);
+    // TODO gather
+}
+
+void MpiWorker::run(MpiCommunicator comm_)
+{
+    comm = comm_;
+    if (!initialize())
+        return;
+    loop();
 }
 
 }

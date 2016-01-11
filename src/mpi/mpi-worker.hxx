@@ -5,6 +5,7 @@
 #include "../worker.hxx"
 #include "../tiles/matrix.hxx"
 #include "../tiles/tile-view.hxx"
+#include "msg.hxx"
 
 namespace game_of_life
 {
@@ -17,7 +18,15 @@ public:
     void run(mpi::MpiCommunicator comm);
 
 protected:
-    void makeIteration();
+    bool initialize();
+    void loop();
+
+    void processMessage(MsgType type, int arg);
+
+    void startIteration();
+    void calcBorder(int);
+    void finishIteration();
+
     void stop();
     void updateStatus();
     void shutdown();
@@ -26,14 +35,24 @@ private:
     mpi::MpiCommunicator comm;
     unsigned workerCount;
 
-    Matrix workMatrix, tempWorkMatrix;
-    Matrix topLine, bottomLine;
-    FrameView frame;
-    TileView workWindow;
+    int neighs[2];
+    Matrix neighLines[2];
 
-    int topNeigh, bottomNeigh;
+    Matrix workMatrix, tempWorkMatrix;
+    FrameView frame;
+
+    Borders borders;
+    TileView inner;
+
+    Borders tempBorders;
+    TileView tempInner;
+
+    mpi::MpiRequest requests[3];
 
     int stopper, iterCompleted;
+    int bordersNotCalced;
+
+    mpi::MpiRequest &broadcastReq;
 };
 
 }

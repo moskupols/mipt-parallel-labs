@@ -2,8 +2,9 @@
 #define MANAGER_HXX_INCLUDED
 
 #include <vector>
+#include <string>
 
-#include "thread.hxx"
+// #include "thread.hxx"
 
 namespace game_of_life
 {
@@ -34,16 +35,16 @@ public:
     std::string getStateStr() const;
     static std::string stateStr(State s);
 
-    void wakeWhenStateIs(State s) const;
-    void wakeWhenStateIsNot(State s) const;
+    // void wakeWhenStateIs(State s) const;
+    // void wakeWhenStateIsNot(State s) const;
 
 protected:
     void setState(State s);
 
 private:
     State s;
-    mutable Mutex stateMutex;
-    mutable Cond stateCond;
+    // mutable Mutex stateMutex;
+    // mutable Cond stateCond;
 };
 
 }

@@ -39,6 +39,9 @@ MAKE_MATCHER(long double,        MPI_LONG_DOUBLE)
 }
 
 
+MpiRequest::MpiRequest():
+    r(MPI_REQUEST_NULL)
+{}
 
 MpiRequest::MpiRequest(MPI_Request r):
     r(r)
@@ -54,6 +57,24 @@ bool MpiRequest::test()
 void MpiRequest::wait()
 {
     impl::throwOnFail(MPI_Wait(&r, MPI_STATUS_IGNORE));
+}
+
+bool MpiRequest::isPending()
+{
+    return r != MPI_REQUEST_NULL;
+}
+
+int MpiRequest::waitSome(int inCount, MpiRequest* in, int* out)
+{
+    int ret;
+    MPI_Request reqs[inCount];
+    for (int i = 0; i < inCount; ++i)
+        reqs[i] = in[i].r;
+    impl::throwOnFail(
+            MPI_Waitsome(inCount, reqs, &ret, out, MPI_STATUSES_IGNORE));
+    for (int i = 0; i < ret; ++i)
+        in[out[i]].r = reqs[out[i]];
+    return ret;
 }
 
 
@@ -113,8 +134,9 @@ Mpi::~Mpi()
 {
     if (initialized)
     {
+        debug("finalized MPI, anonymous debug after this line");
+        finalized = true;
         MPI_Finalize();
-        debug("finalized MPI");
     }
 }
 
@@ -132,8 +154,14 @@ MpiCommunicator Mpi::getWorldComm()
     return impl::makeCommunicator(impl::COMM_WORLD);
 }
 
+bool Mpi::isFinalized()
+{
+    return finalized;
+}
+
 bool Mpi::instantiated = false;
 bool Mpi::initialized = false;
+bool Mpi::finalized = false;
 
 Mpi mpi;
 

@@ -2,7 +2,7 @@
 #include "tile.hxx"
 #include "output.hxx"
 
-#include <set>
+#include <cassert>
 
 using namespace std;
 
@@ -68,28 +68,28 @@ string Manager::stateStr(State s)
     }
 }
 
-void Manager::wakeWhenStateIsNot(State s) const
-{
-    MutexLocker locker(stateMutex);
-    while (getState() == s)
-        stateCond.wait(stateMutex);
-}
+// void Manager::wakeWhenStateIsNot(State s) const
+// {
+    // MutexLocker locker(stateMutex);
+    // while (getState() == s)
+        // stateCond.wait(stateMutex);
+// }
 
-void Manager::wakeWhenStateIs(State s) const
-{
-    MutexLocker locker(stateMutex);
-    while (getState() != s)
-        stateCond.wait(stateMutex);
-}
+// void Manager::wakeWhenStateIs(State s) const
+// {
+    // MutexLocker locker(stateMutex);
+    // while (getState() != s)
+        // stateCond.wait(stateMutex);
+// }
 
 void Manager::setState(State s)
 {
     if (this->s == s)
         return;
-    MutexLocker locker(stateMutex);
+    // MutexLocker locker(stateMutex);
     debug() << "manager: new state: " << stateStr(s);
     this->s = s;
-    stateCond.wakeAll();
+    // stateCond.wakeAll();
 }
 
 } // namespace game_of_life

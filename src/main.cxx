@@ -59,7 +59,7 @@ int toInt(const string &s)
 }
 
 MpiManager manager;
-Matrix matrix;
+Matrix matrix(1, 1);
 
 typedef const vector<string>& Params;
 typedef void (*CommandHandler)(Params);
@@ -177,7 +177,7 @@ void stop(Params p)
     case Manager::RUNNING:
         debug(TAG + "stopping");
         manager.pauseAll();
-        manager.wakeWhenStateIs(Manager::STOPPED);
+        // manager.wakeWhenStateIs(Manager::STOPPED);
         debug(TAG + "awake and stopped");
         out() << "Stopped at " << manager.getStop() << "\n";
         break;
@@ -192,7 +192,9 @@ void quit(Params p)
     checkParamCount(TAG, p, 0, 0);
 
     debug(TAG);
-    if (manager.getState() != Manager::NOT_STARTED)
+    if (manager.getState() == Manager::NOT_STARTED)
+        manager.start(matrix, Mpi::getWorldComm(), 1);
+    // if (manager.getState() != Manager::NOT_STARTED)
     {
         debug(TAG + "manager has started, trying to shut him");
         manager.shutdown();
@@ -211,7 +213,7 @@ void block(Params p)
     debug(TAG);
     if (manager.getState() == Manager::NOT_STARTED)
         throw IncorrectCommandException(TAG + "not running");
-    manager.wakeWhenStateIs(Manager::STOPPED);
+    // manager.wakeWhenStateIs(Manager::STOPPED);
     debug(TAG + "awake and resuming");
 }
 
