@@ -6,6 +6,7 @@
 #include <memory>
 
 #include <cstdlib>
+#include <unistd.h>
 
 #include "output.hxx"
 #include "tile.hxx"
@@ -205,16 +206,26 @@ void quit(Params p)
     exit(0);
 }
 
-void block(Params p)
+void cool(Params cp)
 {
-    static const string TAG("BLOCK: ");
-    checkParamCount(TAG, p, 0, 0);
+    vector<string> p(cp);
+    static const string TAG("BECOOL: ");
+    checkParamCount(TAG, p, 1, 1);
 
     debug(TAG);
-    if (manager.getState() == Manager::NOT_STARTED)
-        throw IncorrectCommandException(TAG + "not running");
-    // manager.wakeWhenStateIs(Manager::STOPPED);
-    debug(TAG + "awake and resuming");
+    p.push_back("200");
+    p.push_back("200");
+    start(p);
+    p.clear();
+
+    p.push_back("1000000");
+    run(p);
+    p.clear();
+
+    sleep(5);
+    stop(p);
+    out() << manager.getStop();
+    quit(p);
 }
 
 void unknownCommand(const string& s)
@@ -240,7 +251,7 @@ int main(int argc, char** argv)
     cmdMap["RUN"] = run;
     cmdMap["STOP"] = stop;
     cmdMap["QUIT"] = quit;
-    cmdMap["BLOCK"] = block;
+    cmdMap["BECOOL"] = cool;
 
     string line;
     debug("---------------- RESTART ----------------------");

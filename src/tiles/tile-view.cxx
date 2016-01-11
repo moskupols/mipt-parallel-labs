@@ -144,4 +144,19 @@ AbstractTile& FrameView::getPartAt(coord_t r, coord_t)
     return getViewed();
 }
 
+void FrameView::output(std::ostream& out) const
+{
+    out << getHeight() << " x " << getWidth() << std::endl;
+    for (coord_t i = -1; i <= (coord_t)getHeight(); ++i)
+    {
+        out << " ="[i >= 0 && i < (coord_t)getHeight()] << ' ';
+        for (size_t j = 0; j < getWidth(); ++j)
+        {
+            out << ".#"[at(i, j)];
+            if (j + 1 == getWidth())
+                out << '\n';
+        }
+    }
+}
+
 }

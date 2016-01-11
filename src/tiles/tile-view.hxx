@@ -63,6 +63,8 @@ public:
     const AbstractTile& getPartAt(coord_t r, coord_t c) const;
     AbstractTile& getPartAt(coord_t r, coord_t c);
 
+    void output(std::ostream& out) const;
+
 private:
     AbstractTile *top;
     AbstractTile *bottom;

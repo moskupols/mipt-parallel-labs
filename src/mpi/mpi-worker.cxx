@@ -7,6 +7,7 @@
 #include "../output.hxx"
 
 #include <algorithm>
+#include <sstream>
 
 using namespace mpi;
 
@@ -47,7 +48,7 @@ bool MpiWorker::initialize()
     size_t sz[2];
     comm.receive(sz, 2, 0, 0);
     workMatrix = Matrix{sz[0], sz[1]};
-    tempWorkMatrix = workMatrix;
+    tempWorkMatrix = Matrix{sz[0], sz[1]};
 
     debug("receiving the initial matrix");
     comm.receive(workMatrix.getData(), sz[0]*sz[1], 0, 0);
@@ -85,8 +86,16 @@ void MpiWorker::loop()
         else if (iterCompleted == stopper)
             debug() << "reached stopper " << stopper << " so not calculating";
 
-        indCount = MpiRequest::waitSome(3, requests, indices);
-        std::sort(indices, indices + indCount);
+        if (workerCount == 1 && iterCompleted < stopper)
+        {
+            indices[0] = 2;
+            indCount = broadcastReq.test() ? 1 : 0;
+        }
+        else
+        {
+            indCount = MpiRequest::waitSome(3, requests, indices);
+            std::sort(indices, indices + indCount);
+        }
         for (int i = indCount-1; i >= 0; --i)
         {
             if (indices[i] == 2)
@@ -125,14 +134,22 @@ void MpiWorker::startIteration()
     size_t width = workMatrix.getWidth();
     bool* starts[2] = {data, data + width * (workMatrix.getHeight()-1)};
 
-    for (int i = 0; i < 2; ++i)
+    if (workerCount != 1)
     {
-        comm.asyncSend(starts[i], width, neighs[i], 0);
-        requests[i] = comm.asyncReceive(neighLines[i].getData(), width, neighs[i], 0);
-    }
+        for (int i = 0; i < 2; ++i)
+        {
+            comm.asyncSend(starts[i], width, neighs[i], 0);
+            requests[i] = comm.asyncReceive(neighLines[i^1].getData(), width, neighs[i], 0);
+        }
 
-    makeIteration(inner, tempInner);
-    bordersNotCalced = 2;
+        makeIteration(inner, tempInner);
+        bordersNotCalced = 2;
+    }
+    else
+    {
+        makeIteration(workMatrix, tempWorkMatrix);
+        finishIteration();
+    }
 }
 
 void MpiWorker::calcBorder(int b)
@@ -145,6 +162,13 @@ void MpiWorker::calcBorder(int b)
 
 void MpiWorker::finishIteration()
 {
+#ifdef DEBUG_OUTPUT
+    std::ostringstream d;
+    d << "after iteration " << iterCompleted << ":\n";
+    frame.output(d);
+    debug(d.str());
+#endif
+
     std::swap(workMatrix, tempWorkMatrix);
     ++iterCompleted;
 }
