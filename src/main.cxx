@@ -13,6 +13,7 @@
 
 #include "mpi/mpi.hxx"
 #include "mpi/mpi-manager.hxx"
+#include "mpi/mpi-worker.hxx"
 
 using namespace game_of_life;
 using namespace mpi;
@@ -220,6 +221,14 @@ void unknownCommand(const string& s)
 int main(int argc, char** argv)
 {
     Mpi::init(argc, argv);
+
+    MpiCommunicator globalComm = Mpi::getWorldComm();
+    if (globalComm.getRank())
+    {
+        MpiWorker worker{};
+        worker.run(globalComm);
+        return 0;
+    }
 
     map<string, CommandHandler> cmdMap;
     cmdMap["START"] = start;

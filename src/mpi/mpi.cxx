@@ -59,6 +59,14 @@ void MpiCommunicator::abort(int error)
     impl::throwOnFail(MPI_Abort(comm, error));
 }
 
+MpiCommunicator MpiCommunicator::split(int color)
+{
+    MPI_Comm ret;
+    impl::throwOnFail(
+            MPI_Comm_split(comm, color, getRank(), &ret));
+    return MpiCommunicator(ret);
+}
+
 MpiCommunicator& MpiCommunicator::operator=(const MpiCommunicator& that)
 {
     comm = that.comm;
@@ -77,7 +85,8 @@ Mpi::Mpi()
 
 Mpi::~Mpi()
 {
-    MPI_Finalize();
+    if (initialized)
+        MPI_Finalize();
 }
 
 void Mpi::init(int argc, char** argv)

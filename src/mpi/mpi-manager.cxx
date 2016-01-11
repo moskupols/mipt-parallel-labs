@@ -7,6 +7,7 @@
 #include <vector>
 
 using namespace std;
+using namespace mpi;
 
 namespace game_of_life
 {
@@ -15,7 +16,7 @@ MpiManager::MpiManager()
 {}
 
 void MpiManager::start(
-        AbstractTile& tile, mpi::MpiCommunicator comm, unsigned workerCount)
+        AbstractTile& tile, MpiCommunicator comm, unsigned workerCount)
 {
     assert(getState() != NOT_STARTED);
     assert(comm.getRank() == 0);
@@ -26,9 +27,10 @@ void MpiManager::start(
     this->workerCount = workerCount;
 
     Manager::start();
+    wakeWhenStateIs(STOPPED);
 }
 
-void MpiManager::runForMore(int runs)
+void MpiManager::runForMore(int /*runs*/)
 {
 }
 
@@ -55,6 +57,9 @@ void MpiManager::run()
             break;
     domains.erase(domains.begin() + workerCount, domains.end());
 
+    globalComm.broadcast(&workerCount, 1, 0);
+    MpiCommunicator comm = globalComm.split(0);
+
     vector<bool*> domainBoundaries;
     for (auto rect : domains)
         domainBoundaries.push_back(
@@ -64,15 +69,12 @@ void MpiManager::run()
 
     for (unsigned i = 0; i < workerCount; ++i)
     {
-        int neigh[2];
-        neigh[0] = (i + workerCount) % (workerCount + 1);
-        neigh[1] = i % workerCount + 1;
-        globalComm.send(neigh, 2, i+1, 0);
-    }
-    for (unsigned i = 0; i < workerCount; ++i)
-        globalComm.send(
+        size_t sz[2] = {domains[i].getHeight(), domains[i].getWidth()};
+        comm.send(sz, 2, i+1, 0);
+        comm.send(
                 domainBoundaries[i], domainBoundaries[i+1]-domainBoundaries[i],
                 i+1, 0);
+    }
     setState(STOPPED);
 }
 

@@ -36,6 +36,8 @@ public:
 
     void abort(int error=0);
 
+    MpiCommunicator split(int color);
+
     template<typename T>
     void broadcast(T* start, int count, int root)
     {

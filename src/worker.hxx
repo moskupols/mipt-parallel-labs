@@ -1,7 +1,7 @@
 #ifndef WORKER_HXX_INCLUDED
 #define WORKER_HXX_INCLUDED
 
-#include "tile.hxx"
+#include "tiles/abstract-tile.hxx"
 
 namespace game_of_life
 {
