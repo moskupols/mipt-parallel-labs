@@ -4,6 +4,8 @@
 #include "../tiles/matrix.hxx"
 #include "../tiles/tile-view.hxx"
 
+#include "../output.hxx"
+
 #include "msg.hxx"
 
 #include <vector>
@@ -21,13 +23,15 @@ MpiManager::MpiManager():
 void MpiManager::start(
         AbstractTile& cleanTile_, MpiCommunicator comm_, unsigned workerCount)
 {
-    assert(getState() != NOT_STARTED);
+    this->cleanTile = &cleanTile_;
+    comm = globalComm = comm_;
+    this->workerCount = workerCount;
+
+    debug("starting manager...");
+
+    assert(getState() == NOT_STARTED);
     assert(comm.getRank() == 0);
     assert(workerCount + 1 <= (unsigned)comm.getSize());
-
-    this->cleanTile = &cleanTile_;
-    globalComm = comm_;
-    this->workerCount = workerCount;
 
     workMatrix = Matrix(*cleanTile);
 
@@ -37,8 +41,12 @@ void MpiManager::start(
             break;
     domains.erase(domains.begin() + workerCount, domains.end());
 
+    debug() << "domains ready, the actual worker count is " << workerCount;
+
     globalComm.broadcast(&workerCount, 1, 0);
     comm = globalComm.split(0);
+
+    debug("worker count broadcasted");
 
     vector<bool*> domainBoundaries;
     for (auto rect : domains)
@@ -55,6 +63,8 @@ void MpiManager::start(
                 domainBoundaries[i], domainBoundaries[i+1]-domainBoundaries[i],
                 i+1, 0);
     }
+    debug("domains are sent");
+
     setState(STOPPED);
 }
 

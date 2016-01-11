@@ -6,7 +6,7 @@ DEBUG_OUTPUT := '"debug.log"'
 
 DEBUG_CXX_FLAGS := -std=c++0x -Wall -Wextra -fstack-protector -ggdb -DDEBUG_OUTPUT=$(DEBUG_OUTPUT)
 RELEASE_CXX_FLAGS := -std=c++0x -Wall -Wextra -fstack-protector -O3
-# CXX_FLAGS += -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=address,undefined
+CXX_FLAGS += -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=address,undefined
 
 LD_FLAGS := $(CXX_FLAGS) -pthread
 
@@ -36,10 +36,10 @@ release: $(RELEASE_TARGET)
 run: run-release
 
 run-debug: $(DEBUG_TARGET)
-	$(DEBUG_TARGET)
+	mpirun $(DEBUG_TARGET)
 
 run-release: $(RELEASE_TARGET)
-	$(RELEASE_TARGET)
+	mpirun $(RELEASE_TARGET)
 
 bench: $(RELEASE_TARGET)
 	$(SHELL) bench.sh $(CONCURRENCIES)

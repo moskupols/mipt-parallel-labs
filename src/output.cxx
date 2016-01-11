@@ -27,7 +27,10 @@ DebugStreamFlusher::DebugStreamFlusher(DebugStreamFlusher&& temp):
 DebugStreamFlusher::~DebugStreamFlusher()
 {
     if (out)
+    {
         *out << "\n";
+        out->flush();
+    }
 }
 
 ostream& DebugStreamFlusher::get()
