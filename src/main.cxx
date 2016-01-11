@@ -6,6 +6,7 @@
 #include <memory>
 
 #include <cstdlib>
+#include <unistd.h>
 
 #include "output.hxx"
 #include "threaded-manager.hxx"
@@ -210,6 +211,28 @@ void block(Params p)
     debug(TAG + "awake and resuming");
 }
 
+void cool(Params cp)
+{
+    vector<string> p(cp);
+    static const string TAG("BECOOL: ");
+    checkParamCount(TAG, p, 1, 1);
+
+    debug(TAG);
+    p.push_back("200");
+    p.push_back("200");
+    start(p);
+    p.clear();
+
+    p.push_back("1000000");
+    run(p);
+    p.clear();
+
+    sleep(5);
+    stop(p);
+    out() << manager.getShared().getStop();
+    quit(p);
+}
+
 void unknownCommand(const string& s)
 {
     throw IncorrectCommandException(string("\"") + s + "\" is not supported ._.");
@@ -224,6 +247,7 @@ int main()
     cmdMap["STOP"] = stop;
     cmdMap["QUIT"] = quit;
     cmdMap["BLOCK"] = block;
+    cmdMap["BECOOL"] = cool;
 
     string line;
     debug("---------------- RESTART ----------------------");
