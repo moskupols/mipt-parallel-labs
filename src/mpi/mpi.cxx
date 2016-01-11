@@ -1,6 +1,7 @@
 #include "mpi.hxx"
 
 #include "../exceptions.hxx"
+#include "../output.hxx"
 
 namespace mpi
 {
@@ -22,6 +23,7 @@ void throwOnFail(int resultCode)
 template<> const MPI_Datatype DatatypeMatcher<type>::value = datatype;
 
 MAKE_MATCHER(bool,               MPI_CHAR)
+MAKE_MATCHER(char,        MPI_CHAR)
 MAKE_MATCHER(signed char,        MPI_CHAR)
 MAKE_MATCHER(signed short int,   MPI_SHORT)
 MAKE_MATCHER(signed int,         MPI_INT)
@@ -45,15 +47,13 @@ MpiRequest::MpiRequest(MPI_Request r):
 bool MpiRequest::test()
 {
     int ret;
-    MPI_Status s;
-    impl::throwOnFail(MPI_Test(&r, &ret, &s));
+    impl::throwOnFail(MPI_Test(&r, &ret, MPI_STATUS_IGNORE));
     return ret;
 }
 
 void MpiRequest::wait()
 {
-    MPI_Status s;
-    impl::throwOnFail(MPI_Wait(&r, &s));
+    impl::throwOnFail(MPI_Wait(&r, MPI_STATUS_IGNORE));
 }
 
 
@@ -78,6 +78,11 @@ int MpiCommunicator::getRank() const
 void MpiCommunicator::abort(int error)
 {
     impl::throwOnFail(MPI_Abort(comm, error));
+}
+
+void MpiCommunicator::barrier()
+{
+    impl::throwOnFail(MPI_Barrier(comm));
 }
 
 MpiCommunicator MpiCommunicator::split(int color)
@@ -107,7 +112,10 @@ Mpi::Mpi()
 Mpi::~Mpi()
 {
     if (initialized)
+    {
         MPI_Finalize();
+        debug("finalized MPI");
+    }
 }
 
 void Mpi::init(int argc, char** argv)
@@ -126,6 +134,8 @@ MpiCommunicator Mpi::getWorldComm()
 
 bool Mpi::instantiated = false;
 bool Mpi::initialized = false;
+
+Mpi mpi;
 
 }
 

@@ -40,18 +40,30 @@ Matrix::Matrix(Matrix&& temp):
     temp.data = NULL;
 }
 
-Matrix::~Matrix() { delete[] data; }
+Matrix::~Matrix()
+{
+    if (data)
+        delete[] data;
+}
 
 void Matrix::operator=(const Matrix& m)
 {
-    if (width != m.width || height != m.height)
+    if (width * height != m.width * m.height)
     {
         width = m.width;
         height = m.height;
-        delete[] data;
+        if (data)
+            delete[] data;
         data = new bool[width * height];
     }
     memcpy(data, m.data, height * width * sizeof(data[0]));
+}
+
+void Matrix::operator=(Matrix&& m)
+{
+    height = m.height;
+    width = m.width;
+    swap(data, m.data);
 }
 
 size_t Matrix::getHeight() const { return height; }

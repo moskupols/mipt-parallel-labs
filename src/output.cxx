@@ -2,7 +2,7 @@
 #include <fstream>
 
 #include "output.hxx"
-#include "thread.hxx"
+#include "mpi/mpi.hxx"
 
 using namespace std;
 
@@ -16,7 +16,7 @@ static ostringstream dout;
 DebugStreamFlusher::DebugStreamFlusher(ostream& m):
     out(&m)
 {
-    *out << "Thread " << Thread::getCurrentId() << ": ";
+    *out << "Rank " << mpi::Mpi::getWorldComm().getRank() << ": ";
 }
 DebugStreamFlusher::DebugStreamFlusher(DebugStreamFlusher&& temp):
     out(temp.out)

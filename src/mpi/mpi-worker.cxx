@@ -4,6 +4,8 @@
 #include "../tiles/tile-view.hxx"
 #include "msg.hxx"
 
+#include "../output.hxx"
+
 using namespace mpi;
 
 namespace
@@ -36,6 +38,8 @@ void MpiWorker::makeIteration()
 
     topReq.wait();
     bottomReq.wait();
+
+    ++iterCompleted;
 }
 
 void MpiWorker::stop()
@@ -50,12 +54,19 @@ void MpiWorker::updateStatus()
     // TODO gather
 }
 
+void MpiWorker::shutdown()
+{
+    comm.barrier();
+}
+
 void MpiWorker::run(MpiCommunicator comm_)
 {
     comm = comm_;
 
     int me = comm.getRank();
     assert(me);
+
+    debug("waiting for actual worker count");
 
     comm.broadcast(&workerCount, 1, 0);
     if (me > (int)workerCount)
@@ -69,6 +80,8 @@ void MpiWorker::run(MpiCommunicator comm_)
     comm.receive(sz, 2, 0, 0);
     workMatrix = Matrix{sz[0], sz[1]};
     tempWorkMatrix = workMatrix;
+
+    debug("receiving the initial matrix");
     comm.receive(workMatrix.getData(), sz[0]*sz[1], 0, 0);
 
     topLine = Matrix{1, sz[1]};
@@ -79,14 +92,18 @@ void MpiWorker::run(MpiCommunicator comm_)
     topNeigh = (me + workerCount - 2) % workerCount + 1;
     bottomNeigh = me % workerCount + 1;
 
+    iterCompleted = stopper = 0;
 
-    int msgBuf[2];
+    debug("finished initialization, ready to go");
+
+    int msgBuf[2] = {-1, -1};
     MpiRequest req = comm.asyncBroadcast(msgBuf, 2, 0);
     while (true)
     {
         bool gotMessage;
-        if (iterCompleted == stopper)
+        if (iterCompleted >= stopper)
         {
+            debug() << "reached stopper " << stopper << ", waiting for broadcast";
             req.wait();
             gotMessage = true;
         }
@@ -98,6 +115,7 @@ void MpiWorker::run(MpiCommunicator comm_)
             makeIteration();
             continue;
         }
+        debug() << "got broadcasted message " << msgBuf[0];
 
         MsgType type = static_cast<MsgType>(msgBuf[0]);
         int msgArg = msgBuf[1];
@@ -106,7 +124,7 @@ void MpiWorker::run(MpiCommunicator comm_)
         {
         case MsgType::UPDATE_STOPPER: stopper += msgArg; break;
         case MsgType::STOP: stop(); break;
-        case MsgType::SHUTDOWN: return;
+        case MsgType::SHUTDOWN: return shutdown();
         case MsgType::UPDATE_STATUS: updateStatus(); break;
         default:
             assert(false);

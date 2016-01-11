@@ -20,6 +20,7 @@ protected:
     void makeIteration();
     void stop();
     void updateStatus();
+    void shutdown();
 
 private:
     mpi::MpiCommunicator comm;

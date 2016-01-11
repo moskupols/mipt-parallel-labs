@@ -36,7 +36,7 @@ release: $(RELEASE_TARGET)
 run: run-release
 
 run-debug: $(DEBUG_TARGET)
-	mpirun -np 4 $(DEBUG_TARGET)
+	mpirun -np 4 --mca mpi_yield_when_idle 1 $(DEBUG_TARGET)
 
 run-release: $(RELEASE_TARGET)
 	mpirun -np 4 $(RELEASE_TARGET)

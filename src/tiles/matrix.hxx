@@ -14,11 +14,12 @@ public:
     Matrix();
     Matrix(size_t height, size_t width);
     explicit Matrix(const AbstractTile& t);
-    explicit Matrix(const Matrix& m);
+    Matrix(const Matrix& m);
     Matrix(Matrix&& temp);
     ~Matrix();
 
     void operator=(const Matrix& m);
+    void operator=(Matrix&& m);
 
     size_t getHeight() const;
     size_t getWidth() const;

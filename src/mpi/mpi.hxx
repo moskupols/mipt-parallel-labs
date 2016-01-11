@@ -34,7 +34,7 @@ public:
     bool test();
     void wait();
 
-private:
+// private:
     MPI_Request r;
 };
 
@@ -47,6 +47,7 @@ public:
     int getRank() const;
 
     void abort(int error=0);
+    void barrier();
 
     MpiCommunicator split(int color);
 
@@ -125,13 +126,13 @@ class Mpi : Noncopyable
 {
 public:
     Mpi();
+    ~Mpi();
 
     static void init(int argc, char** argv);
 
     static MpiCommunicator getWorldComm();
 
 private:
-    ~Mpi();
     static bool instantiated;
     static bool initialized;
 };

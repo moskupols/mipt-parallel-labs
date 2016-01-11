@@ -123,6 +123,7 @@ void status(Params p)
     static const string TAG("STATUS: ");
     checkParamCount(TAG, p, 0, 0);
 
+    manager.updateStatus();
     Manager::State state = manager.getState();
 
     std::ostream& o(out());
@@ -170,6 +171,7 @@ void stop(Params p)
     static const string TAG("STOP: ");
     checkParamCount(TAG, p, 0, 0);
 
+    manager.updateStatus();
     switch (manager.getState())
     {
     case Manager::RUNNING:

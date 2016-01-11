@@ -72,32 +72,37 @@ void MpiManager::runForMore(int runs)
 {
     stop += runs;
     int msg[2] = {static_cast<int>(MsgType::UPDATE_STOPPER), stop};
-    comm.broadcast(msg, 2, 0);
+    debug("broadcasting update stopper");
+    comm.asyncBroadcast(msg, 2, 0).wait();
 }
 
 void MpiManager::pauseAll()
 {
     int msg[2] = {static_cast<int>(MsgType::STOP), 0};
     setState(STOPPING);
-    comm.broadcast(msg, 2, 0);
+    debug("broadcasting stop");
+    comm.asyncBroadcast(msg, 2, 0).wait();
     int maxIter = 0;
     comm.allreduce(MPI_IN_PLACE, &maxIter, 1, MPI_MAX);
+    stop = maxIter;
     // ??
-    setState(STOPPED);
 }
 
 void MpiManager::shutdown()
 {
     int msg[2] = {static_cast<int>(MsgType::SHUTDOWN), 0};
-    comm.broadcast(msg, 2, 0);
     setState(STOPPING);
+    debug("broadcasting shutdown");
+    comm.asyncBroadcast(msg, 2, 0).wait();
+    comm.barrier();
     setState(FINISHED);
 }
 
 void MpiManager::updateStatus()
 {
     int msg[2] = {static_cast<int>(MsgType::UPDATE_STATUS), stop};
-    comm.broadcast(msg, 2, 0);
+    debug("broadcasting update");
+    comm.asyncBroadcast(msg, 2, 0).wait();
     int minIter = stop;
     comm.allreduce(MPI_IN_PLACE, &minIter, 1, MPI_MIN);
     if (minIter == stop)
