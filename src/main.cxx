@@ -194,7 +194,7 @@ void quit(Params p)
     {
         debug(TAG + "manager has started, trying to shut him");
         manager.shutdown();
-        manager.join();
+        // manager.join();
         debug(TAG + "joined the manager");
     }
     debug(TAG + "exiting the program gracefully ----------");

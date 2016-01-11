@@ -12,7 +12,7 @@ class CoordRect;
 class AbstractTile;
 class TorusView;
 
-class Manager : public Thread
+class Manager // : public Thread
 {
 public:
     static std::vector<CoordRect> chooseDomains(const AbstractTile& t, int parts);

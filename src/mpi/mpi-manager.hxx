@@ -3,6 +3,7 @@
 
 #include "mpi.hxx"
 #include "../manager.hxx"
+#include "../tiles/matrix.hxx"
 
 namespace game_of_life
 {
@@ -18,16 +19,17 @@ public:
     void runForMore(int runs);
     void pauseAll();
     void shutdown();
+    void updateStatus();
 
-    int getStop() const;
-
-protected:
-    void run();
+    int getStop();
 
 private:
     AbstractTile* cleanTile;
-    mpi::MpiCommunicator globalComm;
+    Matrix workMatrix;
+    mpi::MpiCommunicator globalComm, comm;
     unsigned workerCount;
+
+    int stop;
 };
 
 }

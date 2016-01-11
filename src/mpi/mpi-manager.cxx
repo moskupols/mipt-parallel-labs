@@ -4,6 +4,8 @@
 #include "../tiles/matrix.hxx"
 #include "../tiles/tile-view.hxx"
 
+#include "msg.hxx"
+
 #include <vector>
 
 using namespace std;
@@ -12,44 +14,22 @@ using namespace mpi;
 namespace game_of_life
 {
 
-MpiManager::MpiManager()
+MpiManager::MpiManager():
+    stop(0)
 {}
 
 void MpiManager::start(
-        AbstractTile& tile, MpiCommunicator comm, unsigned workerCount)
+        AbstractTile& cleanTile_, MpiCommunicator comm_, unsigned workerCount)
 {
     assert(getState() != NOT_STARTED);
     assert(comm.getRank() == 0);
     assert(workerCount + 1 <= (unsigned)comm.getSize());
 
-    this->cleanTile = &tile;
-    this->globalComm = comm;
+    this->cleanTile = &cleanTile_;
+    globalComm = comm_;
     this->workerCount = workerCount;
 
-    Manager::start();
-    wakeWhenStateIs(STOPPED);
-}
-
-void MpiManager::runForMore(int /*runs*/)
-{
-}
-
-void MpiManager::pauseAll()
-{
-}
-
-void MpiManager::shutdown()
-{
-}
-
-int MpiManager::getStop() const
-{
-    return -1;
-}
-
-void MpiManager::run()
-{
-    Matrix workMatrix(*cleanTile);
+    workMatrix = Matrix(*cleanTile);
 
     vector<CoordRect> domains{chooseDomains(workMatrix, workerCount)};
     for (workerCount = 0; workerCount < domains.size(); ++workerCount)
@@ -58,7 +38,7 @@ void MpiManager::run()
     domains.erase(domains.begin() + workerCount, domains.end());
 
     globalComm.broadcast(&workerCount, 1, 0);
-    MpiCommunicator comm = globalComm.split(0);
+    comm = globalComm.split(0);
 
     vector<bool*> domainBoundaries;
     for (auto rect : domains)
@@ -78,5 +58,52 @@ void MpiManager::run()
     setState(STOPPED);
 }
 
-};
+void MpiManager::runForMore(int runs)
+{
+    stop += runs;
+    int msg[2] = {static_cast<int>(MsgType::UPDATE_STOPPER), stop};
+    comm.broadcast(msg, 2, 0);
+}
+
+void MpiManager::pauseAll()
+{
+    int msg[2] = {static_cast<int>(MsgType::STOP), 0};
+    setState(STOPPING);
+    comm.broadcast(msg, 2, 0);
+    int maxIter = 0;
+    comm.allreduce(MPI_IN_PLACE, &maxIter, 1, MPI_MAX);
+    // ??
+    setState(STOPPED);
+}
+
+void MpiManager::shutdown()
+{
+    int msg[2] = {static_cast<int>(MsgType::SHUTDOWN), 0};
+    comm.broadcast(msg, 2, 0);
+    setState(STOPPING);
+    setState(FINISHED);
+}
+
+void MpiManager::updateStatus()
+{
+    int msg[2] = {static_cast<int>(MsgType::UPDATE_STATUS), stop};
+    comm.broadcast(msg, 2, 0);
+    int minIter = stop;
+    comm.allreduce(MPI_IN_PLACE, &minIter, 1, MPI_MIN);
+    if (minIter == stop)
+    {
+        setState(STOPPED);
+        // TODO gather
+    }
+    else
+        setState(RUNNING);
+}
+
+int MpiManager::getStop()
+{
+    return stop;
+}
+
+}
+
 

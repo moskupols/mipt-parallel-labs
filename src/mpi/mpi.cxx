@@ -36,6 +36,27 @@ MAKE_MATCHER(long double,        MPI_LONG_DOUBLE)
 #undef MAKE_MATCHER
 }
 
+
+
+MpiRequest::MpiRequest(MPI_Request r):
+    r(r)
+{}
+
+bool MpiRequest::test()
+{
+    int ret;
+    MPI_Status s;
+    impl::throwOnFail(MPI_Test(&r, &ret, &s));
+    return ret;
+}
+
+void MpiRequest::wait()
+{
+    MPI_Status s;
+    impl::throwOnFail(MPI_Wait(&r, &s));
+}
+
+
 MpiCommunicator::MpiCommunicator()
 {
 }

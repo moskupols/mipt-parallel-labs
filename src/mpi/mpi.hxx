@@ -26,6 +26,18 @@ static const MPI_Datatype value;
 
 }
 
+class MpiRequest
+{
+public:
+    explicit MpiRequest(MPI_Request r);
+
+    bool test();
+    void wait();
+
+private:
+    MPI_Request r;
+};
+
 class MpiCommunicator
 {
 public:
@@ -39,13 +51,32 @@ public:
     MpiCommunicator split(int color);
 
     template<typename T>
+    void allreduce(void* sendbuf, T* recvbuf, int count, MPI_Op op)
+    {
+        impl::throwOnFail(
+                MPI_Allreduce(
+                    sendbuf, recvbuf, count,
+                    impl::DatatypeMatcher<T>::value,
+                    op, comm));
+    }
+
+    template<typename T>
     void broadcast(T* start, int count, int root)
     {
         impl::throwOnFail(
                 MPI_Bcast(
                     start, count, impl::DatatypeMatcher<T>::value,
-                    root,
-                    comm));
+                    root, comm));
+    }
+    template<typename T>
+    MpiRequest asyncBroadcast(T* start, int count, int root)
+    {
+        MPI_Request result;
+        impl::throwOnFail(
+                MPI_Ibcast(
+                    start, count, impl::DatatypeMatcher<T>::value,
+                    root, comm, &result));
+        return MpiRequest(result);
     }
 
     template<typename T>
@@ -54,8 +85,18 @@ public:
         impl::throwOnFail(
                 MPI_Send(
                     start, count, impl::DatatypeMatcher<T>::value,
-                    receiver, tag,
-                    comm));
+                    receiver, tag, comm));
+    }
+
+    template<typename T>
+    MpiRequest asyncSend(T* start, int count, int receiver, int tag)
+    {
+        MPI_Request result;
+        impl::throwOnFail(
+                MPI_Isend(
+                    start, count, impl::DatatypeMatcher<T>::value,
+                    receiver, tag, comm, &result));
+        return MpiRequest(result);
     }
 
     template<typename T>
@@ -65,8 +106,7 @@ public:
         impl::throwOnFail(
                 MPI_Recv(
                     start, count, impl::DatatypeMatcher<T>::value,
-                    sender, tag, comm,
-                    &ret));
+                    sender, tag, comm, &ret));
         return ret;
     }
 

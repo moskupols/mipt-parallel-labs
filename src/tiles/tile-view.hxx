@@ -38,6 +38,7 @@ private:
 class TorusView : public TileView
 {
 public:
+    TorusView();
     explicit TorusView(AbstractTile& viewed);
 
     bool at(coord_t r, coord_t c) const;
@@ -52,6 +53,7 @@ protected:
 class FrameView : public TorusView
 {
 public:
+    FrameView();
     FrameView(AbstractTile& center, AbstractTile& top, AbstractTile& bottom);
 
     bool at(coord_t r, coord_t c) const;

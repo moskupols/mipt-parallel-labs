@@ -67,6 +67,9 @@ const AbstractTile& TileView::getViewed() const
 }
 
 
+TorusView::TorusView()
+{}
+
 TorusView::TorusView(AbstractTile& viewed):
     TileView(viewed)
 {}
@@ -91,6 +94,9 @@ coord_t TorusView::normalizeCoord(coord_t c, coord_t dimen)
 { return ((c % dimen) + dimen) % dimen; }
 
 
+
+FrameView::FrameView()
+{}
 
 FrameView::FrameView(AbstractTile& center, AbstractTile& top, AbstractTile& bottom):
     TorusView(center),
