@@ -35,7 +35,7 @@ void MpiManager::start(
 
     workMatrix = Matrix(*cleanTile);
 
-    vector<CoordRect> domains{chooseDomains(workMatrix, workerCount)};
+    vector<CoordRect> domains(chooseDomains(workMatrix, workerCount));
     for (workerCount = 0; workerCount < domains.size(); ++workerCount)
         if (domains[workerCount].isEmpty())
             break;
@@ -49,9 +49,9 @@ void MpiManager::start(
     debug("worker count broadcasted");
 
     vector<bool*> domainBoundaries;
-    for (auto rect : domains)
+    for (unsigned i = 0; i < workerCount; ++i)
         domainBoundaries.push_back(
-                workMatrix.getData() + rect.r1 * workMatrix.getWidth());
+                workMatrix.getData() + domains[i].r1 * workMatrix.getWidth());
     domainBoundaries.push_back(
             workMatrix.getData() + workMatrix.getWidth() * workMatrix.getHeight());
 

@@ -21,7 +21,7 @@ DebugStreamFlusher::DebugStreamFlusher(ostream& m):
 DebugStreamFlusher::DebugStreamFlusher(DebugStreamFlusher&& temp):
     out(temp.out)
 {
-    temp.out = nullptr;
+    temp.out = NULL;
 }
 
 DebugStreamFlusher::~DebugStreamFlusher()

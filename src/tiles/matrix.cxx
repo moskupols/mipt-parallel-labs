@@ -12,7 +12,8 @@ using namespace std;
 
 namespace game_of_life
 {
-Matrix::Matrix()
+Matrix::Matrix():
+    data(NULL)
 {}
 
 Matrix::Matrix(size_t height, size_t width):
