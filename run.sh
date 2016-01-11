@@ -2,9 +2,6 @@
 
 prog=$1
 concurrency=$2
-h=$3
-w=$4
-runs=$5
 
 # echo $prog
 # echo $concurrency
@@ -12,11 +9,6 @@ runs=$5
 # echo $w
 # echo $runs
 
-$prog <<<"
-start $concurrency $h $w
-run $runs
-block
-status
-quit
-"
+mpirun -np $((concurrency+1)) $prog <<<"becool $concurrency
+" | grep ' at '
 
