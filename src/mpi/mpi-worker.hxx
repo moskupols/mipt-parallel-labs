@@ -47,10 +47,11 @@ private:
     Borders tempBorders;
     TileView tempInner;
 
-    mpi::MpiRequest requests[3];
+    mpi::MpiRequest requests[5];
 
     int stopper, iterCompleted;
     int bordersNotCalced;
+    int neighsNotReceived;
 
     mpi::MpiRequest &broadcastReq;
 };

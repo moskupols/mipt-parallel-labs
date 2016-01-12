@@ -21,7 +21,7 @@ namespace game_of_life
 MpiWorker::MpiWorker():
     stopper(0),
     iterCompleted(0),
-    broadcastReq(requests[2])
+    broadcastReq(requests[4])
 {}
 
 void MpiWorker::shutdown()
@@ -69,6 +69,7 @@ bool MpiWorker::initialize()
 
     debug("finished initialization, ready to go");
     bordersNotCalced = 0;
+    neighsNotReceived = 0;
 
     return true;
 }
@@ -77,28 +78,30 @@ void MpiWorker::loop()
 {
     int msgBuf[2] = {-1, -1};
     broadcastReq = comm.asyncBroadcast(msgBuf, 2, 0);
-    int indices[3];
+    int indices[5];
     int indCount;
     while (true)
     {
-        if (bordersNotCalced == 0 && iterCompleted < stopper)
+        if (bordersNotCalced == 0 && neighsNotReceived == 0 && iterCompleted < stopper)
             startIteration();
         else if (iterCompleted == stopper)
             debug() << "reached stopper " << stopper << " so not calculating";
 
         if (workerCount == 1 && iterCompleted < stopper)
         {
-            indices[0] = 2;
+            indices[0] = 4;
             indCount = broadcastReq.test() ? 1 : 0;
         }
         else
         {
-            indCount = MpiRequest::waitSome(3, requests, indices);
+            indCount = MpiRequest::waitSome(5, requests, indices);
             std::sort(indices, indices + indCount);
         }
         for (int i = indCount-1; i >= 0; --i)
         {
-            if (indices[i] == 2)
+            if (indices[i] < 2)
+                calcBorder(indices[i]);
+            else if (indices[i] == 4)
             {
                 MsgType type = static_cast<MsgType>(msgBuf[0]);
                 processMessage(type, msgBuf[1]);
@@ -107,7 +110,7 @@ void MpiWorker::loop()
                     return;
             }
             else
-                calcBorder(indices[i]);
+                --neighsNotReceived;
         }
     }
 }
@@ -138,12 +141,13 @@ void MpiWorker::startIteration()
     {
         for (int i = 0; i < 2; ++i)
         {
-            comm.asyncSend(starts[i], width, neighs[i], 0);
+            requests[i+2] = comm.asyncSend(starts[i], width, neighs[i], 0);
             requests[i] = comm.asyncReceive(neighLines[i^1].getData(), width, neighs[i], 0);
         }
 
         makeIteration(inner, tempInner);
         bordersNotCalced = 2;
+        neighsNotReceived = 2;
     }
     else
     {
